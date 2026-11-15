@@ -1,0 +1,2555 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>サルカニ合戦 やられる前にヤレ</title>
+<meta name="description" content="柿をかわして、蜂と栗で猿を追い込み、臼で仕留めろ！昔話「猿蟹合戦」のミニWebゲーム。">
+<meta name="theme-color" content="#2b2118">
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="サルカニ合戦 やられる前にヤレ">
+<meta property="og:title" content="サルカニ合戦 やられる前にヤレ">
+<meta property="og:description" content="柿をかわして、蜂と栗で猿を追い込み、臼で仕留めろ！昔話「猿蟹合戦」のミニWebゲーム。">
+<meta property="og:url" content="https://game.chozo.net/sarukani-gassen/">
+<meta property="og:image" content="https://game.chozo.net/sarukani-gassen/ogp.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="サルカニ合戦 やられる前にヤレ：カニと、木の上の猿を蜂で追い立てるゲーム画面">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  html, body { margin: 0; height: 100%; background: #2b2118; overflow: hidden; }
+  body {
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "Noto Sans JP", "Yu Gothic", system-ui, sans-serif;
+    touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+    color: #3a2a1a;
+  }
+  #stage {
+    --w: min(100vw, calc(100vh * 9 / 16));
+    position: relative; width: var(--w); aspect-ratio: 9 / 16; overflow: hidden; background: #a9dcf2;
+    --u: calc(var(--w) / 360);
+  }
+  @supports (height: 100dvh) {
+    #stage { --w: min(100vw, calc(100dvh * 9 / 16)); }
+  }
+  canvas#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  /* HUD */
+  #hud { position: absolute; left: 0; right: 0; top: 0; padding: calc(var(--u)*8) calc(var(--u)*10) 0; pointer-events: none; }
+  #hudRow { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--u)*6); }
+  #hearts { display: flex; gap: calc(var(--u)*3); }
+  #wave { font-weight: 900; font-size: calc(var(--u)*12); color: #fff7e6; background: rgba(90,50,20,.72); border-radius: calc(var(--u)*12); padding: calc(var(--u)*2.5) calc(var(--u)*10); white-space: nowrap; box-shadow: 0 calc(var(--u)*1.5) 0 rgba(60,30,10,.35); }
+  #wave b { color: #ffd34d; font-size: calc(var(--u)*14); }
+  #wave.pop { animation: wavePop .6s ease-out; }
+  @keyframes wavePop { 0% { transform: scale(1.6); } 60% { transform: scale(.92); } 100% { transform: scale(1); } }
+  #banner { position: absolute; left: 0; right: 0; top: calc(var(--u)*392); text-align: center; pointer-events: none; opacity: 0; transform: scale(.8); transition: opacity .25s, transform .25s; z-index: 4; }
+  #banner.show { opacity: 1; transform: scale(1); }
+  #banner .bn1 { display: inline-block; font-weight: 900; font-size: calc(var(--u)*13); color: #fff; background: #c2361f; border-radius: calc(var(--u)*6); padding: calc(var(--u)*2) calc(var(--u)*10); }
+  #banner .bn2 { font-weight: 900; font-size: calc(var(--u)*26); color: #fff7e6; text-shadow: 0 calc(var(--u)*2) 0 #6b3d1c, 0 0 calc(var(--u)*8) rgba(0,0,0,.35); margin-top: calc(var(--u)*4); }
+  #banner .bn3 { font-weight: 800; font-size: calc(var(--u)*11.5); color: #fff; text-shadow: 0 1px 0 #6b3d1c, 0 0 calc(var(--u)*4) rgba(0,0,0,.5); margin-top: calc(var(--u)*2); }
+  #banner.title .bn1 { background: #d4a017; color: #4a2a00; }
+  .nextTitle { font-size: calc(var(--u)*11); color: #6b4a2a; margin: calc(var(--u)*-4) 0 calc(var(--u)*8); }
+  .heart { width: calc(var(--u)*20); height: calc(var(--u)*18); position: relative; }
+  .heart svg { width: 100%; height: 100%; display: block; }
+  #hearts.many { gap: calc(var(--u)*1.5); }
+  #hearts.many .heart { width: calc(var(--u)*15); height: calc(var(--u)*13.5); }
+  .heart.off { opacity: .28; filter: grayscale(1); }
+  .heart.pop { animation: pop .35s ease-out; }
+  @keyframes pop { 0% { transform: scale(1.6); } 100% { transform: scale(1); } }
+  #score { font-weight: 800; font-size: calc(var(--u)*17); color: #fff; text-shadow: 0 calc(var(--u)*1.5) 0 #6b3d1c, 0 0 calc(var(--u)*4) rgba(0,0,0,.25); font-variant-numeric: tabular-nums; margin-right: calc(var(--u)*34); }
+  #gaugeWrap { margin-top: calc(var(--u)*6); display: flex; align-items: center; gap: calc(var(--u)*6); }
+  #gaugeLabel { font-size: calc(var(--u)*10); font-weight: 800; color: #fff; text-shadow: 0 1px 0 #6b3d1c; white-space: nowrap; }
+  #gauge { position: relative; flex: 1; height: calc(var(--u)*13); border-radius: calc(var(--u)*7); background: rgba(60,30,10,.45); border: calc(var(--u)*2) solid #fff7e6; overflow: hidden; box-shadow: 0 calc(var(--u)*1.5) 0 rgba(107,61,28,.6); }
+  #gaugeFill { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: linear-gradient(#ff8a5c, #e2462f); transition: width .25s; }
+  #gaugeLag { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: #ffe08a; transition: width .9s .25s; }
+  #gaugeZone { position: absolute; left: 0; top: 0; bottom: 0; width: 20%; background: repeating-linear-gradient(135deg, rgba(110,70,30,.55) 0 calc(var(--u)*4), rgba(160,110,60,.45) calc(var(--u)*4) calc(var(--u)*8)); border-right: calc(var(--u)*2) dashed #fff7e6; }
+  #gaugeZoneTxt { position: absolute; left: calc(var(--u)*3); top: 50%; transform: translateY(-50%); font-size: calc(var(--u)*8.5); font-weight: 900; color: #fff7e6; text-shadow: 0 0 2px #4a2a10; }
+  #gauge.flash { animation: gflash .4s; }
+  @keyframes gflash { 0%,100% { border-color: #fff7e6; } 30% { border-color: #ffef5a; } }
+
+  #hint {
+    position: absolute; left: 50%; top: calc(var(--u)*336); transform: translateX(-50%);
+    width: calc(var(--u)*320); text-align: center; pointer-events: none;
+    font-size: calc(var(--u)*12.5); font-weight: 800; line-height: 1.45; color: #3a2a1a;
+    background: rgba(255,248,230,.94); border: calc(var(--u)*2) solid #c9873e; border-radius: calc(var(--u)*10);
+    padding: calc(var(--u)*6) calc(var(--u)*10); box-shadow: 0 calc(var(--u)*3) 0 rgba(107,61,28,.35);
+    opacity: 0; transition: opacity .25s, transform .25s;
+  }
+  #hint.show { opacity: 1; transform: translateX(-50%) translateY(calc(var(--u)*2)); }
+  #hint.show.dim { opacity: .18; }
+  #hint b { color: #c2361f; }
+
+  #actBtn {
+    position: absolute; right: calc(var(--u)*10); bottom: calc(var(--u)*9);
+    width: calc(var(--u)*128); height: calc(var(--u)*52); border-radius: calc(var(--u)*14);
+    border: calc(var(--u)*2.5) solid #fff7e6; background: linear-gradient(#f3a347, #d9722a);
+    box-shadow: 0 calc(var(--u)*4) 0 #8a4a1a; color: #fff; font: inherit; font-weight: 900;
+    font-size: calc(var(--u)*13); display: flex; align-items: center; gap: calc(var(--u)*4); padding: 0 calc(var(--u)*8);
+    text-shadow: 0 1px 0 #7a3a10; touch-action: none; cursor: pointer;
+  }
+  #actBtn.empty { background: linear-gradient(#b9a68e, #96846e); box-shadow: 0 calc(var(--u)*4) 0 #5e5040; }
+  #actBtn.press { transform: translateY(calc(var(--u)*3)); box-shadow: 0 calc(var(--u)*1) 0 #8a4a1a; }
+  #actBtn canvas { width: calc(var(--u)*34); height: calc(var(--u)*34); flex: none; }
+  #actLabel { line-height: 1.1; text-align: left; }
+  #actKey { position: absolute; right: calc(var(--u)*6); bottom: calc(var(--u)*2); font-size: calc(var(--u)*8); opacity: .8; }
+  #dragHint { position: absolute; left: calc(var(--u)*12); bottom: calc(var(--u)*16); font-size: calc(var(--u)*10.5); font-weight: 800; color: rgba(255,255,255,.92); text-shadow: 0 1px 0 #5a3a18; pointer-events: none; }
+
+  #muteBtn {
+    position: absolute; right: calc(var(--u)*8); top: calc(var(--u)*6); width: calc(var(--u)*30); height: calc(var(--u)*30);
+    border-radius: 50%; border: calc(var(--u)*2) solid #fff7e6; background: rgba(90,50,20,.55); color: #fff;
+    font-size: calc(var(--u)*14); font-weight: 900; padding: 0; cursor: pointer; z-index: 6;
+  }
+  #muteBtn.off { opacity: .55; text-decoration: line-through; }
+
+  .screen {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: rgba(43,33,24,.55); z-index: 5;
+  }
+  .screen.hidden { display: none; }
+  .panel {
+    width: calc(var(--u)*318); background: #fff8e8; border: calc(var(--u)*3) solid #c9873e; border-radius: calc(var(--u)*16);
+    box-shadow: 0 calc(var(--u)*6) 0 rgba(80,45,15,.5); padding: calc(var(--u)*14) calc(var(--u)*14) calc(var(--u)*12);
+    box-sizing: border-box; text-align: center;
+  }
+  .title { font-size: calc(var(--u)*34); font-weight: 900; letter-spacing: .04em; color: #c2361f; line-height: 1.05; margin: calc(var(--u)*2) 0 calc(var(--u)*4); text-shadow: 0 calc(var(--u)*2.5) 0 #f7c66a; }
+  .title small { display: block; font-size: calc(var(--u)*13); color: #6b3d1c; letter-spacing: .3em; text-shadow: none; }
+  .story { font-size: calc(var(--u)*11); line-height: 1.6; color: #6b4a2a; margin: calc(var(--u)*6) 0 calc(var(--u)*8); }
+  .allies { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u)*5); text-align: left; margin-bottom: calc(var(--u)*8); }
+  .ally { display: flex; align-items: center; gap: calc(var(--u)*5); background: #fdebc8; border-radius: calc(var(--u)*9); padding: calc(var(--u)*4) calc(var(--u)*5); }
+  .ally canvas { width: calc(var(--u)*30); height: calc(var(--u)*30); flex: none; }
+  .ally div { font-size: calc(var(--u)*9.5); line-height: 1.35; color: #5a3a1a; }
+  .ally b { font-size: calc(var(--u)*11.5); color: #a8381a; }
+  .ally.main { grid-column: span 2; background: #f9d9a4; border: calc(var(--u)*2) solid #d08a3a; }
+  .rule { font-size: calc(var(--u)*11); font-weight: 800; color: #3a2a1a; background: #fff0c4; border-radius: calc(var(--u)*8); padding: calc(var(--u)*6); line-height: 1.5; margin-bottom: calc(var(--u)*8); }
+  .rule b { color: #c2361f; }
+  .ctrl { font-size: calc(var(--u)*10); color: #6b4a2a; margin-bottom: calc(var(--u)*10); line-height: 1.5; }
+  .bigBtn {
+    font: inherit; font-weight: 900; font-size: calc(var(--u)*18); color: #fff; padding: calc(var(--u)*10) calc(var(--u)*30);
+    border-radius: calc(var(--u)*14); border: calc(var(--u)*3) solid #fff7e6; background: linear-gradient(#ef6a4a, #c2361f);
+    box-shadow: 0 calc(var(--u)*5) 0 #7a1f10; text-shadow: 0 1px 0 #6a1a0a; cursor: pointer;
+  }
+  .bigBtn:active { transform: translateY(calc(var(--u)*3)); box-shadow: 0 calc(var(--u)*2) 0 #7a1f10; }
+  .subBtn { font: inherit; font-weight: 800; font-size: calc(var(--u)*12); margin-top: calc(var(--u)*10); background: none; border: none; color: #8a5a2a; text-decoration: underline; cursor: pointer; }
+  .resTitle { font-size: calc(var(--u)*25); font-weight: 900; color: #c2361f; margin: calc(var(--u)*2) 0 calc(var(--u)*2); }
+  .resSub { font-size: calc(var(--u)*11.5); color: #6b4a2a; margin-bottom: calc(var(--u)*8); line-height: 1.5; }
+  table.score { width: 100%; border-collapse: collapse; font-size: calc(var(--u)*12); margin-bottom: calc(var(--u)*8); }
+  table.score td { padding: calc(var(--u)*3.5) calc(var(--u)*4); border-bottom: 1px dashed #e0c08a; }
+  table.score td:last-child { text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
+  table.score tr.total td { border-bottom: none; font-size: calc(var(--u)*17); color: #c2361f; padding-top: calc(var(--u)*7); }
+  .rank { display: inline-block; font-size: calc(var(--u)*15); font-weight: 900; color: #fff; background: #3d6b2a; border-radius: calc(var(--u)*20); padding: calc(var(--u)*4) calc(var(--u)*16); margin-bottom: calc(var(--u)*10); }
+  /* ---- タイトル ---- */
+  #startScreen { background: linear-gradient(rgba(255,240,200,.0) 0%, rgba(43,33,24,.0) 55%, rgba(43,33,24,.35) 100%); justify-content: space-between; padding: calc(var(--u)*34) 0 calc(var(--u)*30); box-sizing: border-box; }
+  .tTop { text-align: center; }
+  .tRibbon { display: inline-block; font-weight: 900; font-size: calc(var(--u)*13); letter-spacing: .25em; color: #fff; background: #3d6b2a; padding: calc(var(--u)*3) calc(var(--u)*14) calc(var(--u)*3) calc(var(--u)*17); border-radius: calc(var(--u)*4); transform: rotate(-3deg); box-shadow: 0 calc(var(--u)*3) 0 #234a16; }
+  .tLogo { margin: calc(var(--u)*8) 0 0; line-height: 1; font-weight: 900; }
+  .tLogo span { display: block; color: #fff; paint-order: stroke fill; -webkit-text-stroke: calc(var(--u)*7) #8a2a12; text-shadow: 0 calc(var(--u)*6) 0 #5a1a08; }
+  .tLogo .l1 { font-size: calc(var(--u)*50); letter-spacing: .02em; color: #ffd34d; animation: tBob 2.4s ease-in-out infinite; }
+  .tLogo .l2 { font-size: calc(var(--u)*34); margin-top: calc(var(--u)*8); color: #e8301c; -webkit-text-stroke: calc(var(--u)*6) #fff; text-shadow: none; filter: drop-shadow(0 calc(var(--u)*5) 0 #5a1a08); transform: rotate(-4deg); animation: tBob 2.4s ease-in-out -1.2s infinite; }
+  @keyframes tBob { 0%, 100% { translate: 0 0; } 50% { translate: 0 calc(var(--u)*-5); } }
+  .tBubble { position: relative; display: inline-block; margin-top: calc(var(--u)*16); background: #fff; color: #5a3a1a; font-weight: 800; font-size: calc(var(--u)*13); line-height: 1.45; padding: calc(var(--u)*7) calc(var(--u)*16); border-radius: calc(var(--u)*18); border: calc(var(--u)*2.5) solid #5a3a1a; box-shadow: 0 calc(var(--u)*3) 0 rgba(60,30,10,.35); }
+  .tBubble b { color: #c2361f; font-size: calc(var(--u)*16); }
+  .tBottom { display: flex; flex-direction: column; align-items: center; gap: calc(var(--u)*8); }
+  .tAllies { display: flex; gap: calc(var(--u)*6); }
+  .tAllies canvas { width: calc(var(--u)*40); height: calc(var(--u)*40); background: rgba(255,248,230,.92); border-radius: 50%; border: calc(var(--u)*2.5) solid #c9873e; animation: tHop 1.6s ease-in-out infinite; }
+  .tAllies canvas:nth-child(2) { animation-delay: -.3s; } .tAllies canvas:nth-child(3) { animation-delay: -.6s; width: calc(var(--u)*48); height: calc(var(--u)*48); } .tAllies canvas:nth-child(4) { animation-delay: -.9s; } .tAllies canvas:nth-child(5) { animation-delay: -1.2s; }
+  @keyframes tHop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(calc(var(--u)*-8)); } }
+  .tBest { font-size: calc(var(--u)*11); font-weight: 800; color: #fff; background: rgba(60,35,15,.7); border-radius: calc(var(--u)*12); padding: calc(var(--u)*3) calc(var(--u)*12); }
+  .tBest:empty { display: none; }
+  .popBtn { font-size: calc(var(--u)*24); padding: calc(var(--u)*12) calc(var(--u)*46); animation: tPulse 1.4s ease-in-out infinite; }
+  @keyframes tPulse { 0%, 100% { scale: 1; } 50% { scale: 1.06; } }
+  .howBtn { font: inherit; font-weight: 900; font-size: calc(var(--u)*13); color: #5a3a1a; background: #fff8e8; border: calc(var(--u)*2.5) solid #c9873e; border-radius: calc(var(--u)*20); padding: calc(var(--u)*6) calc(var(--u)*18); box-shadow: 0 calc(var(--u)*3) 0 rgba(80,45,15,.45); cursor: pointer; }
+  .howBtn:active { transform: translateY(calc(var(--u)*2)); box-shadow: 0 calc(var(--u)*1) 0 rgba(80,45,15,.45); }
+  #stage.menu #hud, #stage.menu #actBtn, #stage.menu #dragHint, #stage.menu #hint, #stage.menu #banner { visibility: hidden; }
+  .howPanel .bigBtn { align-self: center; font-size: calc(var(--u)*18); padding: calc(var(--u)*8) calc(var(--u)*34); }
+  .howPanel .subBtn { align-self: center; margin-top: calc(var(--u)*8); }
+  /* ---- あそびかた ---- */
+  .howPanel { max-height: calc(var(--u)*600); display: flex; flex-direction: column; }
+  .howHead { font-size: calc(var(--u)*22); font-weight: 900; color: #c2361f; margin-bottom: calc(var(--u)*6); }
+  .howScroll { -webkit-mask-image: linear-gradient(#000 calc(100% - var(--u)*24), transparent); mask-image: linear-gradient(#000 calc(100% - var(--u)*24), transparent); padding-bottom: calc(var(--u)*16) !important; overflow-y: auto; text-align: left; margin: 0 calc(var(--u)*-4) calc(var(--u)*10); padding: 0 calc(var(--u)*4); flex: 1 1 auto; min-height: 0; }
+  .howGoal { font-size: calc(var(--u)*12); font-weight: 800; color: #3a2a1a; line-height: 1.55; margin-bottom: calc(var(--u)*6); }
+  .howGoal b, .howList b { color: #c2361f; }
+  .howSub { font-size: calc(var(--u)*12); font-weight: 900; color: #fff; background: #c9873e; display: inline-block; border-radius: calc(var(--u)*6); padding: calc(var(--u)*1.5) calc(var(--u)*10); margin: calc(var(--u)*4) 0 calc(var(--u)*5); }
+  .howList { font-size: calc(var(--u)*11); line-height: 1.6; color: #3a2a1a; margin-bottom: calc(var(--u)*6); }
+  .howTitles { display: flex; flex-wrap: wrap; gap: calc(var(--u)*4); margin-bottom: calc(var(--u)*4); }
+  .howTitles span { font-size: calc(var(--u)*10); font-weight: 800; color: #5a3a1a; background: #fdebc8; border-radius: calc(var(--u)*10); padding: calc(var(--u)*2) calc(var(--u)*8); }
+  .howTitles span i { font-style: normal; color: #c2361f; margin-right: calc(var(--u)*3); }
+  .ctrl { text-align: left; }
+  .best { font-size: calc(var(--u)*10.5); color: #8a5a2a; margin-bottom: calc(var(--u)*10); }
+  #pauseNote { position: absolute; left: 0; right: 0; top: 45%; text-align: center; color: #fff; font-weight: 900; font-size: calc(var(--u)*20); text-shadow: 0 2px 0 #000; display: none; z-index: 4; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="cv" width="360" height="640"></canvas>
+
+  <div id="hud">
+    <div id="hudRow">
+      <div id="hearts"></div>
+      <div id="wave"><b>1</b>匹目</div>
+      <div id="score">0</div>
+    </div>
+    <div id="gaugeWrap">
+      <span id="gaugeLabel">子猿</span>
+      <div id="gauge"><div id="gaugeLag"></div><div id="gaugeFill"></div><div id="gaugeZone"><span id="gaugeZoneTxt">臼</span></div></div>
+    </div>
+  </div>
+  <div id="hint"></div>
+  <div id="banner"><div class="bn1"></div><div class="bn2"></div><div class="bn3"></div></div>
+  <div id="dragHint">← ドラッグで移動 →</div>
+  <button id="actBtn" class="empty" aria-label="アクション"><canvas id="actIcon" width="68" height="68"></canvas><span id="actLabel">なにも<br>持ってない</span><span id="actKey">Space</span></button>
+  <button id="muteBtn" aria-label="音のオン・オフ">♪</button>
+  <div id="pauseNote">一時停止中<br><small>タップで再開</small></div>
+
+  <div id="startScreen" class="screen">
+    <div class="tTop">
+      <div class="tRibbon">昔話アクション</div>
+      <h1 class="tLogo"><span class="l1">サルカニ合戦</span><span class="l2">やられる前にヤレ</span></h1>
+      <div class="tBubble">強くなる猿を<br><b>何匹こらしめられる？</b></div>
+    </div>
+    <div class="tBottom">
+      <div class="tAllies">
+        <canvas data-icon="bee" width="60" height="60"></canvas><canvas data-icon="chestnut" width="60" height="60"></canvas><canvas data-icon="usu" width="60" height="60"></canvas><canvas data-icon="needle" width="60" height="60"></canvas><canvas data-icon="ripe" width="60" height="60"></canvas>
+      </div>
+      <div id="bestNote" class="tBest"></div>
+      <button id="startBtn" class="bigBtn popBtn">はじめる</button>
+      <button id="howtoBtn" class="howBtn">？ あそびかた</button>
+    </div>
+  </div>
+
+  <div id="howtoScreen" class="screen hidden">
+    <div class="panel howPanel">
+      <div class="howHead">あそびかた</div>
+      <div class="howScroll">
+        <div class="howSec">
+          <div class="howGoal">青柿をよけながら、地面の<b>仲間</b>を拾って猿をこらしめよう！<br>倒すと<b>もっと強い猿</b>が次々に出てくる。</div>
+          <div class="ctrl"><b>スマホ</b>　ドラッグで移動／右下のボタンで仲間を使う<br><b>PC</b>　← → か A D で移動／スペースで使う</div>
+        </div>
+        <div class="howSub">仲間</div>
+        <div class="allies">
+          <div class="ally main"><canvas data-icon="usu" width="60" height="60"></canvas><div><b>臼（うす）＝本命</b><br>仕掛けると自分で木に登って待ち、猿が真下に来たらドスン！<br>落ち着いている猿は臼の下を避ける。</div></div>
+          <div class="ally"><canvas data-icon="bee" width="60" height="60"></canvas><div><b>蜂</b><br>猿を追い回す。<br>その間は柿が止まる</div></div>
+          <div class="ally"><canvas data-icon="chestnut" width="60" height="60"></canvas><div><b>栗</b><br>猿めがけて飛ぶ。<br>猿は反対へ逃げる</div></div>
+          <div class="ally"><canvas data-icon="needle" width="60" height="60"></canvas><div><b>針</b><br>拾うとすぐ<br>真上に連射</div></div>
+          <div class="ally"><canvas data-icon="ripe" width="60" height="60"></canvas><div><b>熟柿</b><br>キャッチで得点<br>＋体力回復</div></div>
+        </div>
+        <div class="howSub">コツ</div>
+        <div class="rule">蜂と栗で猿を<b>追い立てて</b>、<b>臼の下へ追い込め！</b><br>ゲージの最後の「臼」ゾーンは臼でしか削れない</div>
+        <div class="howSub">勝ち抜き</div>
+        <div class="howList">猿を倒すと<b>ハートの最大数 +1</b>（7個まで）。<br>次の猿は体力が多く、投げるのも速い。<br>倒した数で<b>称号</b>がもらえる！</div>
+        <div id="howTitles" class="howTitles"></div>
+      </div>
+      <button id="howStartBtn" class="bigBtn">はじめる</button>
+      <button id="howBackBtn" class="subBtn">もどる</button>
+    </div>
+  </div>
+
+  <div id="resultScreen" class="screen hidden">
+    <div class="panel">
+      <div id="resTitle" class="resTitle"></div>
+      <div id="resSub" class="resSub"></div>
+      <div id="resRank" class="rank"></div>
+      <div id="resNext" class="nextTitle"></div>
+      <table class="score" id="resTable"></table>
+      <div id="resBest" class="best"></div>
+      <button id="retryBtn" class="bigBtn">もう一度</button><br>
+      <button id="titleBtn" class="subBtn">タイトルへ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     純ロジック（描画・DOM・音に依存しない）。tests/ から単体テストする。
+     ============================================================ -->
+<script id="logic">
+(function (root) {
+  'use strict';
+
+  // ---- 調整値（ゲームバランスはここに集約） ----
+  const CFG = {
+    W: 360, H: 640,
+    GROUND_Y: 572,
+    TRUNK_X: 180,
+    // 猿が乗る枝（上から A, B, C）。y は足元。
+    TIERS: [
+      { y: 150, x0: 62, x1: 298 },
+      { y: 228, x0: 30, x1: 330 },
+      { y: 306, x0: 16, x1: 344 },
+    ],
+    // 臼が待機する、いちばん上の枝
+    RAIL: { y: 88, x0: 40, x1: 320 },
+    CRAB: { y: 556, halfW: 21, halfH: 14, speed: 230, usuSpeedMul: 0.5, hp: 3, hpMax: 7, invuln: 1.3, minX: 22, maxX: 338 },
+    MONKEY: {
+      hp: 100, guard: 20, bodyOff: 18,
+      calmSpeed: 64, sideSpeed: 135, fleeSpeed: 205, chasedSpeed: 140,
+      jumpTime: 0.42, jumpReach: 80, startle: 0.6, avoidHalf: 44,
+      stunTime: 1.3,
+    },
+    DMG: { needle: 2, bee: 1, chestnut: 18, usu: 45 },
+    THROW: {
+      intervalStart: 1.8, intervalEnd: 0.8, rampTime: 100,
+      flightStart: 0.95, flightEnd: 0.7, lead: 0.5, gravity: 900,
+      windupStart: 0.45, windupEnd: 0.32, angerMul: 0.82, gap: 0.17,
+      targetY: 552, feintFrom: 45, feintChance: 0.12,
+    },
+    GREEN_R: 9, RIPE_R: 11, RIPE_FALL: 88, RIPE_MAX: 4,
+    ITEM: {
+      life: 7.5, blink: 2.2, pickHalf: 24, maxOnGround: 2,
+      intervalMin: 4.2, intervalMax: 6.2, minDistFromCrab: 110, nearMonkeyChance: 0.55,
+      minGap: 44, xMin: 24, xMax: 336, usuPity: 7, firstAt: 2.0,
+      weights: { needle: 24, bee: 30, chestnut: 30, usu: 30 },
+      script: ['usu', 'chestnut', 'bee'],
+    },
+    NEEDLE: { duration: 2.6, interval: 0.14, speed: 720, halfW: 12 },
+    BEE: { speed: 205, life: 6.5, stingCd: 0.6, stingDist: 22, ripeChance: 0.175, chasedRipeEvery: 2.4, chasedRipeChance: 0.15, turn: 6 }, // 熟柿：刺したとき 17.5%、追われている間 2.4 秒ごとに 15%
+    CHESTNUT: { fuse: 2.4, speed: 780, halfW: 26, aimMax: 80, burstR: 56, ripeChance: 0.3 }, // 猿へ向けて斜めに飛ぶ（横は aimMax まで）→ 猿の高さで破裂、半径 burstR に入っていれば当たる
+    USU: {
+      groundSpeed: 170, climbSpeed: 300, railSpeed: 170, gravity: 2000,
+      dropWindow: 12, hitHalfW: 26, hitHalfH: 24, groundedLife: 10, half: 14,
+    },
+    SCORE: { perDamage: 10, ripe: 100, usuHit: 300, killBase: 500, fastBase: 60, perSec: 20 },
+    // 勝ち抜き：猿を倒すと次の猿が出る。n 匹目の猿ほど体力が多く、投げるのが速い。
+    WAVE: {
+      hpStep: 30, hpMax: 400,            // 体力 = 100 + 30 ×（n−1）、上限 400
+      guardRatio: 0.2,                   // 「臼」ゾーンはどの猿でもゲージの最後の 20%
+      intervalMul: 0.9, intervalFloor: 0.42, // 投げる間隔 ×0.9^(n−1)、0.42 秒より短くしない
+      timeOffset: 20,                    // 難しさの時間を n 匹目ごとに 20 秒ぶん先へ進める（連投・フェイントが早く出る）
+      speedStep: 0.06, speedMax: 1.45,   // 落ち着いているときの歩く速さ
+      outro: 3.2, enterFrom: -50,        // 謝る演出の長さ、次の猿が降ってくる高さ
+      heal: 1,                           // 1 匹倒すごとにハートの最大数 +1（CRAB.hpMax まで）し、体力も +1
+    },
+    NAMES: ['子猿', 'いたずら猿', '暴れ猿', '大猿', 'ボス猿', '猿大将', '猿の親分', '猿王'],
+    // 倒した数で得る称号（at 匹以上）
+    TITLES: [
+      { at: 0, name: 'まだまだ子ガニ' },
+      { at: 1, name: '一人前のカニ' },
+      { at: 2, name: '猿こらしめ係' },
+      { at: 3, name: '柿の木の番人' },
+      { at: 5, name: 'カニ名人' },
+      { at: 7, name: 'サルカニ合戦の勇者' },
+      { at: 10, name: 'カニ大将' },
+      { at: 15, name: '伝説の大ガニ' },
+      { at: 20, name: 'カニ神さま' },
+    ],
+  };
+
+  // ---- 小道具 ----
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function lerp(a, b, k) { return a + (b - a) * k; }
+  function sign(v) { return v > 0 ? 1 : v < 0 ? -1 : 0; }
+
+  function makeRng(seed) {
+    let a = (seed >>> 0) || 1;
+    const f = function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    f.range = function (lo, hi) { return lo + (hi - lo) * f(); };
+    return f;
+  }
+
+  function weightedPick(weights, rng) {
+    const keys = Object.keys(weights).filter(function (k) { return weights[k] > 0; });
+    let sum = 0;
+    for (const k of keys) sum += weights[k];
+    let r = rng() * sum;
+    for (const k of keys) { r -= weights[k]; if (r < 0) return k; }
+    return keys[keys.length - 1];
+  }
+
+  // ---- 難易度カーブ ----
+  function rampK(t, cfg) { return clamp(t / cfg.THROW.rampTime, 0, 1); }
+  function throwInterval(t, hpRatio, cfg, wave) {
+    cfg = cfg || CFG;
+    let iv = lerp(cfg.THROW.intervalStart, cfg.THROW.intervalEnd, rampK(t, cfg));
+    if (wave > 1) iv = Math.max(cfg.WAVE.intervalFloor, iv * Math.pow(cfg.WAVE.intervalMul, wave - 1));
+    if (hpRatio <= 0.5) iv *= cfg.THROW.angerMul;
+    return iv;
+  }
+  // n 匹目の猿の強さ
+  function waveStats(n, cfg) {
+    cfg = cfg || CFG;
+    const V = cfg.WAVE, k = Math.max(0, n - 1);
+    const maxHp = Math.min(V.hpMax, cfg.MONKEY.hp + V.hpStep * k);
+    const names = cfg.NAMES;
+    return {
+      n: n, maxHp: maxHp, guard: Math.round(maxHp * V.guardRatio),
+      tOff: V.timeOffset * k,
+      speedMul: Math.min(V.speedMax, 1 + V.speedStep * k),
+      intervalMul: Math.pow(V.intervalMul, k),
+      name: n <= names.length ? names[n - 1] : names[names.length - 1] + ' その' + (n - names.length + 1),
+    };
+  }
+  // 猿を倒したとき：ハートの最大数 +1（上限 hpMax）、体力も +1（最大数まで）
+  function growHearts(hp, maxHp, cfg) {
+    cfg = cfg || CFG;
+    const mx = Math.min(cfg.CRAB.hpMax, maxHp + cfg.WAVE.heal);
+    return { hp: Math.min(mx, hp + cfg.WAVE.heal), maxHp: mx };
+  }
+  // 倒した数 → 称号と次の称号
+  function titleFor(kills, cfg) {
+    cfg = cfg || CFG;
+    const T = cfg.TITLES;
+    let i = 0;
+    while (i + 1 < T.length && kills >= T[i + 1].at) i++;
+    return { name: T[i].name, index: i, next: T[i + 1] ? { at: T[i + 1].at, name: T[i + 1].name, left: T[i + 1].at - kills } : null };
+  }
+  function flightTime(t, cfg) { cfg = cfg || CFG; return lerp(cfg.THROW.flightStart, cfg.THROW.flightEnd, rampK(t, cfg)); }
+  function windupTime(t, cfg) { cfg = cfg || CFG; return lerp(cfg.THROW.windupStart, cfg.THROW.windupEnd, rampK(t, cfg)); }
+  // 1回の投擲で何個投げるか（後半ほど2連投・3連投）
+  function throwCount(t, hpRatio, r) {
+    let p2 = t < 30 ? 0 : t < 65 ? 0.3 : 0.45;
+    let p3 = t < 65 ? 0 : 0.15;
+    if (hpRatio <= 0.5) p2 += 0.1;
+    if (hpRatio <= 0.25) p3 += 0.1;
+    if (r < p3) return 3;
+    if (r < p3 + p2) return 2;
+    return 1;
+  }
+
+  // 放物線で、T 秒後に (tx, targetY) を通る初速を求める
+  function ballistic(ox, oy, tx, ty, T, g) {
+    return { vx: (tx - ox) / T, vy: ((ty - oy) - 0.5 * g * T * T) / T };
+  }
+  // 先読み付きの狙い：カニの速度 × 飛行時間 × lead だけ先を狙う
+  function aimThrow(ox, oy, crabX, crabVx, T, cfg) {
+    cfg = cfg || CFG;
+    const tx = clamp(crabX + crabVx * T * cfg.THROW.lead, 16, cfg.W - 16);
+    const v = ballistic(ox, oy, tx, cfg.THROW.targetY, T, cfg.THROW.gravity);
+    return { tx: tx, vx: v.vx, vy: v.vy };
+  }
+  function landingX(x, y, vx, vy, g, groundY) {
+    const c = y - groundY; // < 0
+    const t = (-vy + Math.sqrt(Math.max(0, vy * vy - 2 * g * c))) / g;
+    return x + vx * t;
+  }
+
+  // ---- ダメージ ----
+  // chip（針・蜂・栗）は guard 未満には削れない。臼だけが guard を越えて削れる。
+  function applyDamage(hp, kind, cfg, guard) {
+    cfg = cfg || CFG;
+    const amt = cfg.DMG[kind];
+    if (guard == null) guard = cfg.MONKEY.guard;
+    if (hp <= 0 || amt == null) return { hp: hp, dealt: 0, blocked: false };
+    if (kind === 'usu') {
+      const n = Math.max(0, hp - amt);
+      return { hp: n, dealt: hp - n, blocked: false };
+    }
+    if (hp <= guard) return { hp: hp, dealt: 0, blocked: true };
+    const n = Math.max(guard, hp - amt);
+    return { hp: n, dealt: hp - n, blocked: hp - amt < guard };
+  }
+
+  // ---- 当たり判定 ----
+  function circleRect(cx, cy, r, rx, ry, hw, hh) {
+    const nx = clamp(cx, rx - hw, rx + hw), ny = clamp(cy, ry - hh, ry + hh);
+    const dx = cx - nx, dy = cy - ny;
+    return dx * dx + dy * dy <= r * r;
+  }
+  // 熟柿キャッチ：カニの体＋はさみの上 8px まで
+  function catchTest(px, py, crabX, cfg) {
+    cfg = cfg || CFG;
+    const C = cfg.CRAB;
+    return circleRect(px, py, cfg.RIPE_R, crabX, C.y - 4, C.halfW + 3, C.halfH + 8);
+  }
+  function crabHitTest(px, py, crabX, cfg) {
+    cfg = cfg || CFG;
+    const C = cfg.CRAB;
+    return circleRect(px, py, cfg.GREEN_R, crabX, C.y, C.halfW - 2, C.halfH - 2);
+  }
+
+  // ---- 臼 ----
+  function fallTime(dy, g) { return dy <= 0 ? 0 : Math.sqrt(2 * dy / g); }
+  function usuHitTest(ux, uy, mx, my, cfg) {
+    cfg = cfg || CFG;
+    return Math.abs(ux - mx) <= cfg.USU.hitHalfW && Math.abs(uy - my) <= cfg.USU.hitHalfH;
+  }
+  // t 秒後の猿の x を「いまの動き」から予測する（臼が見て判断できる情報だけ使う）。
+  // ジャンプ中は着地点まで、走っていればその速度のまま。急に止まる・向きを変える・段を跳ぶと外れる。
+  function predictMonkeyX(m, t, cfg) {
+    cfg = cfg || CFG;
+    if (m.jump) {
+      const j = m.jump, left = j.d - j.t;
+      if (t <= left) return lerp(j.x0, j.x1, (j.t + t) / j.d);
+      // 慌てて跳んだ猿は、着地後も同じ向きに走り続けるとみなす
+      const run = (m.state === 'flee' || m.state === 'chased')
+        ? (m.state === 'flee' ? cfg.MONKEY.fleeSpeed : cfg.MONKEY.chasedSpeed) : 0;
+      return j.x1 + sign(j.x1 - j.x0) * run * (t - left);
+    }
+    return m.x + (m.vx || 0) * t;
+  }
+  function monkeyBodyY(m, cfg) {
+    const y = m.jump ? cfg.TIERS[m.jump.tier].y : m.y;
+    return y - cfg.MONKEY.bodyOff;
+  }
+  // 臼の自動落下：いま落ちたら「着く瞬間」に猿がいる位置が、臼の真下 ±dropWindow に入るか
+  // （usu.lastPred に前フレームの予測を覚える）
+  function shouldDropUsu(usu, m, cfg) {
+    cfg = cfg || CFG;
+    if (!usu || usu.state !== 'armed') return false;
+    if (m.state === 'defeated' || m.state === 'stunned') return false;
+    const dy = monkeyBodyY(m, cfg) - usu.y;
+    if (dy <= 10) return false;
+    const t = fallTime(dy, cfg.USU.gravity);
+    const px = predictMonkeyX(m, t, cfg);
+    const prev = usu.lastPred;
+    usu.lastPred = px;
+    if (Math.abs(px - usu.x) <= cfg.USU.dropWindow) return true;
+    // 着地などで予測位置が 1 フレームで真下をまたいだ：命中幅に入っていれば落とす（際どい当たり）
+    return prev != null && sign(prev - usu.x) !== sign(px - usu.x) && Math.abs(px - usu.x) <= cfg.USU.hitHalfW;
+  }
+
+  // ---- 栗で逃げる先：爆発と反対側の、枝の端のほう ----
+  function fleeTarget(monkeyX, monkeyTier, blastX, rng, cfg) {
+    cfg = cfg || CFG;
+    let dir = sign(monkeyX - blastX);
+    if (Math.abs(monkeyX - blastX) < 4) dir = monkeyX < cfg.TRUNK_X ? 1 : -1; // 真下なら広い側へ
+    let tier = monkeyTier;
+    if (rng() < 0.5) {
+      const others = [0, 1, 2].filter(function (i) { return i !== monkeyTier; });
+      tier = others[Math.floor(rng() * others.length)];
+    }
+    const T = cfg.TIERS[tier];
+    const x = dir > 0 ? T.x1 - 10 - rng() * 36 : T.x0 + 10 + rng() * 36;
+    return { tier: tier, x: x, dir: dir };
+  }
+
+  // ---- 仲間の出現抽選 ----
+  // s: { crabX, monkeyX, items:[{kind,x}], usuInWorld, sinceUsuGone, forceKind }
+  function pickSpawn(s, rng, cfg) {
+    cfg = cfg || CFG;
+    const I = cfg.ITEM;
+    let kind = s.forceKind || null;
+    if (kind === 'usu' && s.usuInWorld) kind = null;
+    if (!kind) {
+      if (!s.usuInWorld && s.sinceUsuGone >= I.usuPity) kind = 'usu';
+      else {
+        const w = Object.assign({}, I.weights);
+        if (s.usuInWorld) delete w.usu;
+        kind = weightedPick(w, rng);
+      }
+    }
+    // 位置：カニから離れた所、半分以上は猿の真下（＝柿が降る所）
+    let best = null, bestScore = -Infinity;
+    for (let i = 0; i < 12; i++) {
+      let x = rng() < I.nearMonkeyChance ? s.monkeyX + (rng() - 0.5) * 70 : I.xMin + rng() * (I.xMax - I.xMin);
+      x = clamp(x, I.xMin, I.xMax);
+      const dc = Math.abs(x - s.crabX);
+      const tooClose = s.items.some(function (it) { return Math.abs(it.x - x) < I.minGap; });
+      if (dc >= I.minDistFromCrab && !tooClose) return { kind: kind, x: x };
+      const score = dc - (tooClose ? 1000 : 0);
+      if (score > bestScore) { bestScore = score; best = x; }
+    }
+    if (bestScore < I.minDistFromCrab) best = s.crabX < cfg.W / 2 ? I.xMax : I.xMin;
+    return { kind: kind, x: best };
+  }
+
+  // ---- 栗の狙い ----
+  // 破裂時の猿の位置へ向けて飛ぶ。横に曲がれるのは aimMax まで。破裂点は猿の体の高さ。
+  function chestnutAim(cx, cy, mx, my, cfg) {
+    cfg = cfg || CFG;
+    const K = cfg.CHESTNUT;
+    const tx = clamp(mx, cx - K.aimMax, cx + K.aimMax), ty = my;
+    const dx = tx - cx, dy = ty - cy, d = Math.hypot(dx, dy) || 1;
+    return { tx: tx, ty: ty, vx: dx / d * K.speed, vy: dy / d * K.speed };
+  }
+  // 破裂が当たるか：破裂点から猿の体の中心までの距離が burstR 以内
+  function chestnutBurstHits(bx, by, mx, my, cfg) {
+    cfg = cfg || CFG;
+    return Math.hypot(mx - bx, my - by) <= cfg.CHESTNUT.burstR;
+  }
+
+  // ---- スコア ----
+  // 1 匹倒したときのボーナス：n 匹目 × killBase ＋ 速さ（fastBase 秒より早いほど）
+  function killBonus(n, time, cfg) {
+    cfg = cfg || CFG;
+    const S = cfg.SCORE;
+    return n * S.killBase + Math.max(0, Math.round((S.fastBase - time) * S.perSec));
+  }
+  function computeScore(stats, cfg) {
+    cfg = cfg || CFG;
+    const S = cfg.SCORE;
+    const kills = stats.kills || 0;
+    const r = {
+      damage: Math.round(stats.damage) * S.perDamage,
+      ripe: stats.ripe * S.ripe,
+      usu: stats.usuHits * S.usuHit,
+      kills: stats.killBonus || 0,
+    };
+    r.total = r.damage + r.ripe + r.usu + r.kills;
+    r.title = titleFor(kills, cfg);
+    r.rank = r.title.name;
+    return r;
+  }
+
+  // ================================================================
+  //  ワールド（描画なしのシミュレーション）
+  // ================================================================
+  function createWorld(seed) {
+    const cfg = CFG;
+    return {
+      cfg: cfg, rng: makeRng(seed || 1), t: 0, mt: 0, wave: 1, ws: waveStats(1, cfg), phase: 'play', phaseT: 0,
+      crab: { x: 180, vx: 0, vxS: 0, hp: cfg.CRAB.hp, maxHp: cfg.CRAB.hp, invuln: 0, held: null, needleT: 0, needleCd: 0, walk: 0 },
+      monkey: {
+        x: 180, y: cfg.TIERS[1].y, tier: 1, hp: cfg.MONKEY.hp, maxHp: cfg.MONKEY.hp, guard: cfg.MONKEY.guard, state: 'calm', stateT: 0,
+        target: null, jump: null, flee: null, vx: 0, vy: 0, face: 1,
+        throwT: 2.6, idleT: 1.2, chaseT: 0, queue: [], count: 1, feint: false,
+        hurtT: 0, ripeT: 2, aim: null, landed: false,
+      },
+      persimmons: [], items: [], usu: null, bees: [], chestnuts: [], shots: [], events: [],
+      stats: { damage: 0, chip: 0, ripe: 0, usuHits: 0, usuMiss: 0, stings: 0, kills: 0, killBonus: 0, killTimes: [] },
+      spawnT: cfg.ITEM.firstAt, scriptIdx: 0, sinceUsuGone: 0, hints: {}, fullT: 0,
+    };
+  }
+
+  // 難しさの時間：いまの猿と戦っている時間 ＋ n 匹目ぶんの前倒し
+  function diffT(w) { return w.mt + w.ws.tOff; }
+  function emit(w, type, data) { const e = data || {}; e.type = type; w.events.push(e); }
+  function hint(w, id) { if (!w.hints[id]) { w.hints[id] = true; emit(w, 'hint', { id: id }); } }
+  function usuInWorld(w) {
+    return !!w.usu || w.crab.held === 'usu' || w.items.some(function (it) { return it.kind === 'usu'; });
+  }
+  function liveScore(w) {
+    const S = w.cfg.SCORE;
+    return Math.round(w.stats.damage) * S.perDamage + w.stats.ripe * S.ripe + w.stats.usuHits * S.usuHit + w.stats.killBonus;
+  }
+  // 落ち着いた猿が避ける臼の列（臼が上の枝に出てから）
+  function usuBand(w) {
+    const u = w.usu;
+    if (u && (u.state === 'rail' || u.state === 'armed')) return u.tx;
+    return null;
+  }
+
+  // ---- カニ ----
+  function updateCrab(w, dt, input) {
+    const c = w.crab, C = w.cfg.CRAB;
+    const speed = C.speed * (c.held === 'usu' ? C.usuSpeedMul : 1);
+    let v = 0;
+    if (w.phase === 'play' || w.phase === 'win' || w.phase === 'enter') {
+      if (input.targetX != null) v = clamp((input.targetX - c.x) * 12, -speed, speed);
+      else v = clamp(input.moveX || 0, -1, 1) * speed;
+    }
+    const nx = clamp(c.x + v * dt, C.minX, C.maxX);
+    c.vx = (nx - c.x) / dt;
+    c.x = nx;
+    c.vxS = lerp(c.vxS, c.vx, Math.min(1, dt * 10));
+    c.walk += Math.abs(c.vx) * dt;
+    c.invuln = Math.max(0, c.invuln - dt);
+    if (c.needleT > 0) {
+      c.needleT -= dt; c.needleCd -= dt;
+      if (c.needleCd <= 0) {
+        c.needleCd += w.cfg.NEEDLE.interval;
+        w.shots.push({ x: c.x, y: C.y - 20, vy: -w.cfg.NEEDLE.speed });
+        emit(w, 'needleFire', { x: c.x });
+      }
+    }
+  }
+
+  function doAction(w) {
+    const c = w.crab, cfg = w.cfg;
+    if (!c.held) { emit(w, 'empty', { x: c.x }); return; }
+    const kind = c.held;
+    c.held = null;
+    if (kind === 'bee') {
+      w.bees.push({ x: c.x, y: cfg.CRAB.y - 24, vx: 0, vy: -150, life: cfg.BEE.life, cd: 0.2, dir: c.x < 180 ? -1 : 1, t: 0 });
+      emit(w, 'use', { kind: kind, x: c.x });
+    } else if (kind === 'chestnut') {
+      w.chestnuts.push({ x: c.x, y: cfg.GROUND_Y - 9, state: 'fuse', t: cfg.CHESTNUT.fuse, vy: 0, hit: false });
+      emit(w, 'use', { kind: kind, x: c.x });
+    } else if (kind === 'usu') {
+      const tx = clamp(c.x, cfg.RAIL.x0, cfg.RAIL.x1);
+      w.usu = { state: 'toTrunk', x: c.x, y: cfg.GROUND_Y - cfg.USU.half, tx: tx, vy: 0, vx: 0, rot: 0, life: 0, crossed: false, t: 0 };
+      emit(w, 'use', { kind: kind, x: c.x, tx: tx });
+    }
+  }
+
+  // ---- 仲間アイテム ----
+  function updateItems(w, dt) {
+    const cfg = w.cfg, I = cfg.ITEM, c = w.crab;
+    if (usuInWorld(w)) w.sinceUsuGone = 0; else w.sinceUsuGone += dt;
+    w.fullT = Math.max(0, w.fullT - dt);
+    // 出現
+    w.spawnT -= dt;
+    if (w.spawnT <= 0) {
+      w.spawnT = w.rng.range(I.intervalMin, I.intervalMax);
+      if (w.items.length < I.maxOnGround) {
+        let force = null;
+        while (w.scriptIdx < I.script.length) {
+          const k = I.script[w.scriptIdx++];
+          if (k === 'usu' && usuInWorld(w)) continue;
+          force = k; break;
+        }
+        const sp = pickSpawn({
+          crabX: c.x, monkeyX: w.monkey.x, items: w.items,
+          usuInWorld: usuInWorld(w), sinceUsuGone: w.sinceUsuGone, forceKind: force,
+        }, w.rng, cfg);
+        w.items.push({ kind: sp.kind, x: sp.x, life: I.life, t: 0 });
+        emit(w, 'spawnItem', { kind: sp.kind, x: sp.x });
+      }
+    }
+    // 寿命と取得
+    for (let i = w.items.length - 1; i >= 0; i--) {
+      const it = w.items[i];
+      it.life -= dt; it.t += dt;
+      if (it.life <= 0) { w.items.splice(i, 1); emit(w, 'itemExpire', { kind: it.kind, x: it.x }); continue; }
+      if (w.phase !== 'play' || Math.abs(it.x - c.x) > I.pickHalf) continue;
+      if (it.kind === 'needle') {
+        c.needleT = cfg.NEEDLE.duration; c.needleCd = 0;
+        w.items.splice(i, 1);
+        emit(w, 'pick', { kind: 'needle', x: it.x });
+      } else if (!c.held) {
+        c.held = it.kind;
+        w.items.splice(i, 1);
+        emit(w, 'pick', { kind: it.kind, x: it.x });
+        hint(w, 'pick_' + it.kind);
+      } else if (w.fullT <= 0) {
+        w.fullT = 1.5;
+        emit(w, 'handsFull', { x: it.x, kind: it.kind });
+      }
+    }
+    // 外れて地面に落ちた臼の回収
+    const u = w.usu;
+    if (u && u.state === 'grounded' && !c.held && w.phase === 'play' && Math.abs(u.x - c.x) <= I.pickHalf + 4) {
+      c.held = 'usu'; w.usu = null;
+      emit(w, 'pick', { kind: 'usu', x: u.x, recovered: true });
+    }
+  }
+
+  // ---- 猿 ----
+  function moveMonkey(w, dt, speed, avoid) {
+    const m = w.monkey, cfg = w.cfg, M = cfg.MONKEY;
+    if (m.jump) {
+      const j = m.jump;
+      j.t += dt;
+      const k = Math.min(1, j.t / j.d);
+      m.x = lerp(j.x0, j.x1, k);
+      m.y = lerp(j.y0, j.y1, k) - j.h * 4 * k * (1 - k);
+      m.vx = (j.x1 - j.x0) / j.d;
+      if (m.vx) m.face = sign(m.vx);
+      if (k >= 1) { m.tier = j.tier; m.y = j.y1; m.jump = null; m.vx = 0; }
+      return 'jumping';
+    }
+    if (!m.target) { m.vx = 0; return 'idle'; }
+    const band = avoid ? usuBand(w) : null;
+    if (m.target.tier !== m.tier) {
+      const T = cfg.TIERS[m.target.tier];
+      const dx0 = m.target.x - m.x;
+      let jx = clamp(m.x + sign(dx0) * Math.min(Math.abs(dx0), M.jumpReach), T.x0 + 6, T.x1 - 6);
+      if (band != null && Math.abs(jx - band) < M.avoidHalf) {
+        const side = m.x >= band ? 1 : -1;
+        jx = clamp(band + side * (M.avoidHalf + 4), T.x0 + 6, T.x1 - 6);
+        if (Math.abs(jx - band) < M.avoidHalf) { m.target = null; return 'blocked'; }
+      }
+      m.jump = { x0: m.x, y0: m.y, x1: jx, y1: T.y, tier: m.target.tier, t: 0, d: M.jumpTime, h: 34 };
+      emit(w, 'monkeyJump', { x: m.x, y: m.y });
+      return 'jumping';
+    }
+    const dx = m.target.x - m.x, step = speed * dt;
+    if (band != null) {
+      const nx = m.x + sign(dx) * Math.min(step, Math.abs(dx));
+      if (Math.abs(nx - band) < M.avoidHalf && Math.abs(m.x - band) >= M.avoidHalf - 0.01) {
+        m.target = null; m.vx = 0; return 'blocked';
+      }
+    }
+    if (Math.abs(dx) <= step) { m.x = m.target.x; m.vx = 0; m.target = null; return 'arrived'; }
+    m.x += sign(dx) * step; m.vx = sign(dx) * speed; m.face = sign(dx);
+    return 'moving';
+  }
+
+  function toCalm(w, idle) {
+    const m = w.monkey;
+    m.state = 'calm'; m.stateT = 0; m.target = null; m.flee = null;
+    m.idleT = idle; m.aim = null;
+    m.throwT = Math.max(m.throwT, 0.6);
+  }
+
+  function pickCalmTarget(w) {
+    const m = w.monkey, cfg = w.cfg, M = cfg.MONKEY, rng = w.rng;
+    const band = usuBand(w);
+    const side = band == null ? 0 : (m.x >= band ? 1 : -1);
+    for (let i = 0; i < 6; i++) {
+      const tier = rng() < 0.55 ? m.tier : Math.floor(rng() * 3);
+      const T = cfg.TIERS[tier];
+      let lo = T.x0 + 8, hi = T.x1 - 8;
+      if (band != null) {
+        if (side < 0) hi = Math.min(hi, band - M.avoidHalf - 6);
+        else lo = Math.max(lo, band + M.avoidHalf + 6);
+      }
+      if (hi - lo < 10) continue;
+      let x = rng() < 0.45 ? w.crab.x + (rng() - 0.5) * 160 : lo + rng() * (hi - lo);
+      x = clamp(x, lo, hi);
+      if (Math.abs(x - m.x) < 20 && tier === m.tier) continue;
+      m.target = { tier: tier, x: x };
+      return true;
+    }
+    m.idleT = 0.8;
+    return false;
+  }
+
+  function startChased(w) {
+    const m = w.monkey;
+    m.state = 'chased'; m.target = null; m.chaseT = 0; m.aim = null; m.queue = [];
+    emit(w, 'monkeyChased', { x: m.x, y: m.y });
+  }
+  function retargetChase(w) {
+    const m = w.monkey, cfg = w.cfg, rng = w.rng;
+    const bee = w.bees.find(function (b) { return b.life > 0; });
+    m.chaseT = 0.5;
+    if (!bee) return;
+    let away = sign(m.x - bee.x) || (m.x < cfg.TRUNK_X ? 1 : -1);
+    const tierIdx = m.jump ? m.jump.tier : m.tier;
+    const T = cfg.TIERS[tierIdx];
+    const edge = away > 0 ? T.x1 - 12 : T.x0 + 12;
+    if (Math.abs(m.x - edge) < 30) {
+      // 追い詰められたら別の段へ跳んで、逆側へ駆け抜ける
+      const others = [0, 1, 2].filter(function (i) { return i !== tierIdx; });
+      const nt = others[Math.floor(rng() * others.length)];
+      const T2 = cfg.TIERS[nt];
+      m.target = { tier: nt, x: away > 0 ? T2.x0 + 20 + rng() * 40 : T2.x1 - 20 - rng() * 40 };
+      m.chaseT = 1.2;
+    } else {
+      m.target = { tier: tierIdx, x: edge };
+    }
+  }
+
+  function dropRipe(w, x, y) {
+    const n = w.persimmons.filter(function (p) { return p.kind === 'ripe'; }).length;
+    if (n >= w.cfg.RIPE_MAX) return;
+    w.persimmons.push({ kind: 'ripe', x: x, y: y, vx: 0, vy: w.cfg.RIPE_FALL, r: w.cfg.RIPE_R, ph: w.rng() * 6, t: 0 });
+    emit(w, 'ripeDrop', { x: x, y: y });
+  }
+
+  function spawnGreen(w, aimX) {
+    const m = w.monkey, cfg = w.cfg, c = w.crab;
+    const ox = m.x + m.face * 10, oy = m.y - 32;
+    const T = flightTime(diffT(w), cfg);
+    let a;
+    if (aimX == null) a = aimThrow(ox, oy, c.x, c.vxS, T, cfg);
+    else { const tx = clamp(aimX, 16, cfg.W - 16); const v = ballistic(ox, oy, tx, cfg.THROW.targetY, T, cfg.THROW.gravity); a = { tx: tx, vx: v.vx, vy: v.vy }; }
+    const p = { kind: 'green', x: ox, y: oy, vx: a.vx, vy: a.vy, r: cfg.GREEN_R, t: 0, rot: 0 };
+    p.landX = landingX(ox, oy, a.vx, a.vy, cfg.THROW.gravity, cfg.GROUND_Y);
+    p.aimX = a.tx;
+    w.persimmons.push(p);
+    emit(w, 'throw', { x: ox, y: oy });
+  }
+
+  function updateMonkey(w, dt) {
+    const m = w.monkey, cfg = w.cfg, M = cfg.MONKEY, rng = w.rng;
+    m.hurtT = Math.max(0, m.hurtT - dt);
+    const beeAlive = w.bees.some(function (b) { return b.life > 0; });
+    const band = usuBand(w);
+    const hpRatio = m.hp / m.maxHp;
+    switch (m.state) {
+      case 'stunned':
+        m.stateT -= dt; m.vx = 0;
+        if (m.jump) moveMonkey(w, dt, 0, false);
+        if (m.stateT <= 0) { if (beeAlive) startChased(w); else toCalm(w, 0.4); }
+        break;
+      case 'startle':
+        m.stateT -= dt; m.vx = 0;
+        if (m.jump) moveMonkey(w, dt, 0, false);
+        if (m.stateT <= 0 && !m.jump) { m.state = 'flee'; m.target = { tier: m.flee.tier, x: m.flee.x }; }
+        break;
+      case 'flee': {
+        const r = moveMonkey(w, dt, M.fleeSpeed, false);
+        if (r === 'arrived' || r === 'idle') { if (beeAlive) startChased(w); else toCalm(w, 0.8); }
+        break;
+      }
+      case 'chased':
+        if (!beeAlive) { toCalm(w, 0.6); break; }
+        m.chaseT -= dt;
+        if (!m.jump && (m.chaseT <= 0 || !m.target)) retargetChase(w);
+        moveMonkey(w, dt, M.chasedSpeed, false);
+        m.ripeT -= dt;
+        if (m.ripeT <= 0) { m.ripeT = cfg.BEE.chasedRipeEvery; if (rng() < cfg.BEE.chasedRipeChance) dropRipe(w, m.x, m.y - 14); }
+        break;
+      case 'notice':
+        m.stateT -= dt; m.vx = 0;
+        if (m.stateT <= 0) toCalm(w, 0.2);
+        break;
+      case 'sidestep': {
+        const r = moveMonkey(w, dt, M.sideSpeed * w.ws.speedMul, false);
+        if (r === 'arrived' || r === 'idle') toCalm(w, 0.5);
+        break;
+      }
+      case 'windup':
+        m.stateT -= dt; m.vx = 0;
+        m.aim = aimThrow(m.x + m.face * 10, m.y - 32, w.crab.x, w.crab.vxS, flightTime(diffT(w), cfg), cfg);
+        m.aim.landX = landingX(m.x + m.face * 10, m.y - 32, m.aim.vx, m.aim.vy, cfg.THROW.gravity, cfg.GROUND_Y);
+        if (beeAlive) { startChased(w); break; }
+        if (m.stateT <= 0) {
+          if (m.feint) {
+            m.feint = false;
+            emit(w, 'feint', { x: m.x, y: m.y });
+            toCalm(w, 0.3); m.throwT = 0.5;
+          } else {
+            m.state = 'throwing';
+            m.queue = [];
+            const dir = sign(w.crab.vxS) || (rng() < 0.5 ? 1 : -1);
+            for (let i = 0; i < m.count; i++) {
+              // 1発目は先読み、2発目は「切り返し」先、3発目は反対側
+              const aim = i === 0 ? null : i === 1 ? w.crab.x - dir * 34 : w.crab.x + dir * 70;
+              m.queue.push({ delay: i * cfg.THROW.gap, aimX: aim });
+            }
+          }
+        }
+        break;
+      case 'throwing':
+        m.vx = 0;
+        if (beeAlive) { startChased(w); break; }
+        for (let i = 0; i < m.queue.length; i++) {
+          const q = m.queue[i];
+          q.delay -= dt;
+          if (q.delay <= 0 && !q.done) {
+            q.done = true;
+            spawnGreen(w, q.aimX == null ? null : (i === 1 ? w.crab.x - (sign(w.crab.vxS) || 1) * 34 : q.aimX));
+          }
+        }
+        if (m.queue.every(function (q) { return q.done; })) {
+          m.queue = [];
+          toCalm(w, 0.35);
+          m.throwT = throwInterval(diffT(w), hpRatio, cfg, w.wave) * (0.85 + rng() * 0.3);
+        }
+        break;
+      case 'calm':
+      default: {
+        m.aim = null;
+        if (beeAlive) { startChased(w); break; }
+        if (band != null && !m.jump && Math.abs(m.x - band) < M.avoidHalf) {
+          // 臼が真上に来た：落ち着いている猿は気づいて横へよける
+          const T = cfg.TIERS[m.tier];
+          let side = m.x >= band ? 1 : -1;
+          let tx = band + side * (M.avoidHalf + 10);
+          if (tx < T.x0 + 6 || tx > T.x1 - 6) { side = -side; tx = band + side * (M.avoidHalf + 10); }
+          m.state = 'sidestep';
+          m.target = { tier: m.tier, x: clamp(tx, T.x0 + 6, T.x1 - 6) };
+          emit(w, 'monkeyNotice', { x: m.x, y: m.y, usuX: band });
+          hint(w, 'usuAvoid');
+          break;
+        }
+        m.throwT -= dt;
+        if (m.throwT <= 0 && !m.jump && w.phase === 'play') {
+          m.state = 'windup';
+          m.stateT = windupTime(diffT(w), cfg);
+          m.target = null;
+          m.face = sign(w.crab.x - m.x) || m.face;
+          m.count = throwCount(diffT(w), hpRatio, rng());
+          m.feint = diffT(w) > cfg.THROW.feintFrom && rng() < cfg.THROW.feintChance;
+          emit(w, 'windup', { x: m.x, y: m.y, count: m.count });
+          break;
+        }
+        if (m.target || m.jump) {
+          const r = moveMonkey(w, dt, M.calmSpeed * w.ws.speedMul, true);
+          if (r === 'blocked') {
+            m.state = 'notice'; m.stateT = 0.55;
+            emit(w, 'monkeyNotice', { x: m.x, y: m.y, usuX: band });
+            hint(w, 'usuAvoid');
+          } else if (r === 'arrived') m.idleT = w.rng.range(0.5, 1.6);
+        } else {
+          m.vx = 0;
+          m.idleT -= dt;
+          if (m.idleT <= 0) pickCalmTarget(w);
+          if (!m.target) m.face = sign(w.crab.x - m.x) || m.face;
+        }
+      }
+    }
+  }
+
+  function hitMonkey(w, kind, x, y) {
+    const m = w.monkey;
+    if (m.hp <= 0 || w.phase !== 'play') return null;
+    const r = applyDamage(m.hp, kind, w.cfg, m.guard);
+    m.hp = r.hp;
+    w.stats.damage += r.dealt;
+    if (kind !== 'usu') w.stats.chip += r.dealt;
+    if (r.dealt > 0) m.hurtT = 0.25;
+    emit(w, 'monkeyHurt', { kind: kind, dealt: r.dealt, blocked: r.blocked, x: x, y: y, hp: m.hp });
+    if (r.blocked) hint(w, 'guard');
+    if (m.hp <= 0) defeat(w);
+    return r;
+  }
+
+  function defeat(w) {
+    const m = w.monkey;
+    w.phase = 'win'; w.phaseT = 0;
+    const st = w.stats, before = titleFor(st.kills, w.cfg).name;
+    st.kills++;
+    st.killTimes.push(w.mt);
+    const bonus = killBonus(w.wave, w.mt, w.cfg);
+    st.killBonus += bonus;
+    const c = w.crab, r2 = growHearts(c.hp, c.maxHp, w.cfg);
+    const healed = r2.hp > c.hp, grew = r2.maxHp > c.maxHp;
+    c.hp = r2.hp; c.maxHp = r2.maxHp;
+    const after = titleFor(st.kills, w.cfg);
+    m.state = 'defeated'; m.target = null; m.jump = null; m.vy = -220; m.landed = false; m.queue = [];
+    for (const p of w.persimmons) if (p.kind === 'green') emit(w, 'poof', { x: p.x, y: p.y });
+    w.persimmons = w.persimmons.filter(function (p) { return p.kind !== 'green'; });
+    for (const b of w.bees) b.life = Math.min(b.life, 0);
+    emit(w, 'win', { kills: st.kills, wave: w.wave, time: w.mt, bonus: bonus, healed: healed, grew: grew, maxHp: c.maxHp, name: w.ws.name });
+    if (after.name !== before) emit(w, 'title', { name: after.name, kills: st.kills });
+  }
+
+  // 次の猿：上から降ってきて真ん中の枝に乗る
+  function nextMonkey(w) {
+    const cfg = w.cfg;
+    w.wave++;
+    w.ws = waveStats(w.wave, cfg);
+    w.mt = 0;
+    const m = w.monkey, oldX = m.x, oldY = m.y, oldFace = m.face;
+    const x = clamp(w.crab.x < cfg.W / 2 ? 250 : 110, cfg.TIERS[1].x0 + 10, cfg.TIERS[1].x1 - 10);
+    Object.assign(m, {
+      x: x, y: cfg.WAVE.enterFrom, tier: 1, hp: w.ws.maxHp, maxHp: w.ws.maxHp, guard: w.ws.guard,
+      state: 'enter', stateT: 0, target: null, jump: null, flee: null, vx: 0, vy: 0, face: sign(w.crab.x - x) || 1,
+      throwT: 2.0, idleT: 0.8, chaseT: 0, queue: [], count: 1, feint: false, hurtT: 0, ripeT: 2, aim: null, landed: false,
+    });
+    w.phase = 'enter'; w.phaseT = 0;
+    emit(w, 'nextMonkey', { wave: w.wave, name: w.ws.name, hp: w.ws.maxHp, oldX: oldX, oldY: oldY, oldFace: oldFace });
+  }
+
+  // ---- 臼 ----
+  function updateUsu(w, dt) {
+    const u = w.usu;
+    if (!u) return;
+    const cfg = w.cfg, U = cfg.USU, m = w.monkey;
+    const railY = cfg.RAIL.y - U.half;
+    const groundY = cfg.GROUND_Y - U.half;
+    u.t += dt;
+    switch (u.state) {
+      case 'toTrunk': {
+        const dx = cfg.TRUNK_X - u.x, step = U.groundSpeed * dt;
+        u.rot += sign(dx) * step / U.half;
+        if (Math.abs(dx) <= step) { u.x = cfg.TRUNK_X; u.state = 'climb'; u.rot = 0; emit(w, 'usuClimb', { x: u.x }); }
+        else u.x += sign(dx) * step;
+        break;
+      }
+      case 'climb':
+        u.y -= U.climbSpeed * dt;
+        if (u.y <= railY) { u.y = railY; u.state = 'rail'; emit(w, 'usuTop', { x: u.x, tx: u.tx }); }
+        break;
+      case 'rail': {
+        const dx = u.tx - u.x, step = U.railSpeed * dt;
+        if (Math.abs(dx) <= step) { u.x = u.tx; u.state = 'armed'; u.armT = 0; emit(w, 'usuArmed', { x: u.x }); }
+        else u.x += sign(dx) * step;
+        break;
+      }
+      case 'armed':
+        u.armT += dt;
+        if (w.phase === 'play' && shouldDropUsu(u, m, cfg)) {
+          u.state = 'fall'; u.vy = 0; u.crossed = false; u.hit = false;
+          emit(w, 'usuDrop', { x: u.x, y: u.y, mx: m.x, state: m.state });
+        }
+        break;
+      case 'fall': {
+        const py = u.y;
+        u.vy += U.gravity * dt;
+        u.y += u.vy * dt;
+        const my = m.y - cfg.MONKEY.bodyOff;
+        if (m.state !== 'defeated' && !u.hit && usuHitTest(u.x, u.y, m.x, my, cfg)) {
+          u.hit = true; u.crossed = true;
+          emit(w, 'usuCross', { x: m.x, y: my, usuX: u.x, dx: m.x - u.x, hit: true });
+          const r = hitMonkey(w, 'usu', m.x, my);
+          w.stats.usuHits++;
+          emit(w, 'usuHit', { x: u.x, y: u.y, dealt: r ? r.dealt : 0 });
+          if (w.phase === 'play') {
+            m.state = 'stunned'; m.stateT = cfg.MONKEY.stunTime; m.target = null; m.flee = null; m.queue = [];
+            dropRipe(w, m.x - 10, m.y - 16); dropRipe(w, m.x + 10, m.y - 22);
+          }
+          u.state = 'leave'; u.vx = (u.x < cfg.TRUNK_X ? -1 : 1) * 60; u.vy = -360; u.rolled = false;
+          break;
+        }
+        if (!u.crossed && py < my && u.y >= my) {
+          u.crossed = true;
+          emit(w, 'usuCross', { x: m.x, y: my, usuX: u.x, dx: m.x - u.x, hit: false });
+        }
+        if (u.y >= groundY) {
+          u.y = groundY; u.state = 'grounded'; u.life = U.groundedLife;
+          w.stats.usuMiss++;
+          emit(w, 'usuMiss', { x: u.x });
+          hint(w, 'usuMiss');
+        }
+        break;
+      }
+      case 'grounded':
+        u.life -= dt;
+        if (u.life <= 0) { w.usu = null; emit(w, 'usuGone', { x: u.x }); }
+        break;
+      case 'leave':
+        u.rot += dt * 9 * sign(u.vx || 1);
+        if (!u.rolled) {
+          u.vy += U.gravity * 0.6 * dt; u.x += u.vx * dt; u.y += u.vy * dt;
+          if (u.y >= groundY && u.vy > 0) { u.y = groundY; u.rolled = true; u.vx = sign(u.vx || 1) * 240; emit(w, 'usuLand', { x: u.x }); }
+        } else {
+          u.x += u.vx * dt;
+          if (u.x < -40 || u.x > cfg.W + 40) w.usu = null;
+        }
+        break;
+    }
+  }
+
+  function updateBees(w, dt) {
+    const cfg = w.cfg, B = cfg.BEE, m = w.monkey;
+    for (let i = w.bees.length - 1; i >= 0; i--) {
+      const b = w.bees[i];
+      b.life -= dt; b.t += dt;
+      if (b.life > 0 && m.state !== 'defeated') {
+        const my = m.y - cfg.MONKEY.bodyOff;
+        const dx = m.x - b.x, dy = my - b.y, d = Math.hypot(dx, dy) || 1;
+        const k = Math.min(1, B.turn * dt);
+        b.vx = lerp(b.vx, dx / d * B.speed, k);
+        b.vy = lerp(b.vy, dy / d * B.speed, k);
+        b.x += b.vx * dt + Math.sin(b.t * 13) * 0.6;
+        b.y += b.vy * dt + Math.cos(b.t * 11) * 0.6;
+        b.cd -= dt;
+        if (d < B.stingDist && b.cd <= 0 && w.phase === 'play') {
+          b.cd = B.stingCd;
+          w.stats.stings++;
+          emit(w, 'beeSting', { x: m.x, y: my });
+          hitMonkey(w, 'bee', m.x, my);
+          if (w.rng() < B.ripeChance) dropRipe(w, m.x, m.y - 14);
+        }
+      } else {
+        b.vx = lerp(b.vx, b.dir * 140, Math.min(1, dt * 3));
+        b.vy = lerp(b.vy, -170, Math.min(1, dt * 3));
+        b.x += b.vx * dt; b.y += b.vy * dt;
+        if (b.y < -40 || b.x < -40 || b.x > cfg.W + 40) { w.bees.splice(i, 1); emit(w, 'beeGone', {}); }
+      }
+    }
+  }
+
+  function updateChestnuts(w, dt) {
+    const cfg = w.cfg, K = cfg.CHESTNUT, m = w.monkey, M = cfg.MONKEY;
+    for (let i = w.chestnuts.length - 1; i >= 0; i--) {
+      const c = w.chestnuts[i];
+      if (c.state === 'fuse') {
+        c.t -= dt;
+        if (c.t <= 0) {
+          const aim = chestnutAim(c.x, c.y, m.x, m.y - M.bodyOff, cfg);
+          c.state = 'fly'; c.vx = aim.vx; c.vy = aim.vy; c.tx = aim.tx; c.ty = aim.ty;
+          emit(w, 'blast', { x: c.x, y: c.y, tx: aim.tx, ty: aim.ty });
+          if (w.phase === 'play' && m.state !== 'defeated' && m.state !== 'stunned') {
+            const tierNow = m.jump ? m.jump.tier : m.tier;
+            m.flee = fleeTarget(m.x, tierNow, c.x, w.rng, cfg);
+            m.state = 'startle'; m.stateT = M.startle; m.target = null; m.queue = []; m.aim = null;
+            emit(w, 'monkeyFlee', { fx: m.x, fy: m.y, tx: m.flee.x, ty: cfg.TIERS[m.flee.tier].y, dir: m.flee.dir, blastX: c.x });
+          }
+        }
+      } else {
+        c.x += (c.vx || 0) * dt; c.y += c.vy * dt;
+        if (c.y <= c.ty) {
+          // 猿の高さで破裂
+          c.x = c.tx; c.y = c.ty;
+          const my = m.y - M.bodyOff;
+          const dist = Math.hypot(m.x - c.x, my - c.y);
+          const hit = w.phase === 'play' && m.state !== 'defeated' && m.state !== 'enter' && chestnutBurstHits(c.x, c.y, m.x, my, cfg);
+          emit(w, 'chestnutBurst', { x: c.x, y: c.y, r: K.burstR, hit: hit, dist: dist, mx: m.x, my: my });
+          if (hit) {
+            emit(w, 'chestnutHit', { x: m.x, y: my });
+            hitMonkey(w, 'chestnut', m.x, my);
+            if (w.rng() < K.ripeChance) dropRipe(w, m.x, m.y - 14);
+          }
+          w.chestnuts.splice(i, 1);
+        }
+      }
+    }
+  }
+
+  function updateShots(w, dt) {
+    const cfg = w.cfg, m = w.monkey;
+    for (let i = w.shots.length - 1; i >= 0; i--) {
+      const s = w.shots[i];
+      s.y += s.vy * dt;
+      const my = m.y - cfg.MONKEY.bodyOff;
+      if (Math.abs(s.x - m.x) <= cfg.NEEDLE.halfW && Math.abs(s.y - my) <= 20) {
+        w.shots.splice(i, 1);
+        emit(w, 'needleHit', { x: s.x, y: s.y });
+        hitMonkey(w, 'needle', s.x, s.y);
+        continue;
+      }
+      if (s.y < -20) w.shots.splice(i, 1);
+    }
+  }
+
+  function updatePersimmons(w, dt) {
+    const cfg = w.cfg, c = w.crab, C = cfg.CRAB;
+    for (let i = w.persimmons.length - 1; i >= 0; i--) {
+      const p = w.persimmons[i];
+      p.t += dt;
+      if (p.kind === 'green') {
+        p.vy += cfg.THROW.gravity * dt;
+        p.x += p.vx * dt; p.y += p.vy * dt; p.rot += dt * 10;
+        if (w.phase === 'play' && c.invuln <= 0 && crabHitTest(p.x, p.y, c.x, cfg)) {
+          w.persimmons.splice(i, 1);
+          c.hp -= 1; c.invuln = C.invuln;
+          emit(w, 'crabHit', { x: p.x, y: p.y, hp: c.hp });
+          if (c.hp <= 0) { w.phase = 'lose'; w.phaseT = 0; emit(w, 'lose', {}); }
+          continue;
+        }
+        if (p.y >= cfg.GROUND_Y - p.r * 0.5) {
+          w.persimmons.splice(i, 1);
+          emit(w, 'greenLand', { x: p.x, dx: p.x - c.x });
+        }
+      } else {
+        p.y += p.vy * dt;
+        p.x += Math.sin(p.t * 3 + p.ph) * 14 * dt;
+        if (w.phase !== 'lose' && catchTest(p.x, p.y, c.x, cfg)) {
+          w.persimmons.splice(i, 1);
+          w.stats.ripe++;
+          const heal = c.hp < c.maxHp && w.phase === 'play';
+          if (heal) c.hp++;
+          emit(w, 'ripeCatch', { x: p.x, y: p.y, heal: heal, hp: c.hp });
+          continue;
+        }
+        if (p.y >= cfg.GROUND_Y - 4) {
+          w.persimmons.splice(i, 1);
+          const dx = p.x - c.x;
+          // カニの判定の端から何 px 外れたか
+          const gap = Math.max(0, Math.abs(dx) - (C.halfW + 3) - p.r);
+          emit(w, 'ripeMiss', { x: p.x, dx: dx, gap: gap });
+        }
+      }
+    }
+  }
+
+  function updateOutro(w, dt) {
+    const m = w.monkey, cfg = w.cfg;
+    w.phaseT += dt;
+    if (w.phase === 'win') {
+      if (!m.landed) {
+        m.vy += 900 * dt; m.y += m.vy * dt;
+        if (m.y >= cfg.GROUND_Y && m.vy > 0) { m.y = cfg.GROUND_Y; m.vy = 0; m.landed = true; emit(w, 'monkeyLand', { x: m.x }); }
+      } else {
+        const tx = w.crab.x + (m.x < w.crab.x ? -58 : 58);
+        const dx = clamp(tx, 30, cfg.W - 30) - m.x;
+        if (Math.abs(dx) > 2) { m.x += sign(dx) * Math.min(Math.abs(dx), 90 * dt); m.face = sign(dx); }
+        else m.face = sign(w.crab.x - m.x) || 1;
+      }
+      if (w.phaseT >= cfg.WAVE.outro) nextMonkey(w);
+    } else if (w.phase === 'enter') {
+      const ty = cfg.TIERS[1].y;
+      m.vy += 1400 * dt; m.y += m.vy * dt;
+      if (m.y >= ty) {
+        m.y = ty; m.vy = 0; m.state = 'calm'; m.landed = false;
+        w.phase = 'play'; w.phaseT = 0;
+        emit(w, 'monkeyEnter', { x: m.x, y: m.y, wave: w.wave });
+      }
+    } else if (w.phase === 'lose') {
+      if (w.phaseT >= 2.4) { w.phase = 'done'; w.result = 'lose'; emit(w, 'done', { result: 'lose' }); }
+    }
+  }
+
+  // input: { moveX: -1..1, targetX: number|null, action: boolean }
+  function stepWorld(w, dt, input) {
+    input = input || {};
+    if (w.phase === 'done') return;
+    if (w.phase === 'play') { w.t += dt; w.mt += dt; }
+    updateCrab(w, dt, input);
+    if (w.phase === 'play') {
+      if (input.action) doAction(w);
+      updateItems(w, dt);
+      updateMonkey(w, dt);
+    } else {
+      if (w.phase === 'lose') w.items.length = 0;
+      updateOutro(w, dt);
+    }
+    updateUsu(w, dt);
+    updateBees(w, dt);
+    updateChestnuts(w, dt);
+    updateShots(w, dt);
+    updatePersimmons(w, dt);
+  }
+
+  const api = {
+    CFG: CFG, makeRng: makeRng, clamp: clamp, lerp: lerp,
+    throwInterval: throwInterval, flightTime: flightTime, windupTime: windupTime, throwCount: throwCount,
+    ballistic: ballistic, aimThrow: aimThrow, landingX: landingX,
+    applyDamage: applyDamage, catchTest: catchTest, crabHitTest: crabHitTest,
+    fallTime: fallTime, usuHitTest: usuHitTest, predictMonkeyX: predictMonkeyX, shouldDropUsu: shouldDropUsu,
+    fleeTarget: fleeTarget, pickSpawn: pickSpawn, computeScore: computeScore, killBonus: killBonus, growHearts: growHearts, chestnutAim: chestnutAim, waveStats: waveStats, titleFor: titleFor,
+    createWorld: createWorld, stepWorld: stepWorld, usuInWorld: usuInWorld, usuBand: usuBand, liveScore: liveScore,
+  };
+  root.SaruLogic = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+
+<!-- ============================================================
+     描画・入力・音（ロジックの状態を読んで描くだけ）
+     ============================================================ -->
+<script id="game">
+(function () {
+  'use strict';
+  const L = window.SaruLogic, CFG = L.CFG;
+  const W = CFG.W, H = CFG.H;
+  const stage = document.getElementById('stage');
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d');
+  const $ = function (id) { return document.getElementById(id); };
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------------- 画面サイズ ----------------
+  let scale = 1, bg = null;
+  function resize() {
+    const r = stage.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const bw = Math.max(1, Math.round(r.width * dpr)), bh = Math.max(1, Math.round(r.height * dpr));
+    if (cv.width !== bw || cv.height !== bh) { cv.width = bw; cv.height = bh; }
+    scale = bw / W;
+    bg = buildBackground(bw, bh, scale);
+  }
+
+  // ---------------- 背景（一度だけ描いて使い回す） ----------------
+  function buildBackground(bw, bh, s) {
+    const c = document.createElement('canvas');
+    c.width = bw; c.height = bh;
+    const g = c.getContext('2d');
+    g.setTransform(s, 0, 0, s, 0, 0);
+    // 空
+    const sky = g.createLinearGradient(0, 0, 0, CFG.GROUND_Y);
+    sky.addColorStop(0, '#7cc6ec'); sky.addColorStop(0.7, '#cdeefa'); sky.addColorStop(1, '#fbf1d2');
+    g.fillStyle = sky; g.fillRect(0, 0, W, H);
+    // 太陽と雲
+    g.fillStyle = 'rgba(255,240,180,.9)'; circle(g, 300, 60, 26); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.85)';
+    [[60, 70, 1], [250, 120, .8], [40, 380, .7], [320, 420, .9]].forEach(function (a) {
+      const x = a[0], y = a[1], k = a[2];
+      circle(g, x, y, 14 * k); g.fill(); circle(g, x + 14 * k, y - 6 * k, 16 * k); g.fill(); circle(g, x + 30 * k, y, 13 * k); g.fill();
+    });
+    // 遠い山
+    g.fillStyle = '#a7c8a0';
+    g.beginPath(); g.moveTo(0, 470);
+    for (let x = 0; x <= W; x += 20) g.lineTo(x, 450 - Math.sin(x * 0.02) * 30 - Math.sin(x * 0.05) * 12);
+    g.lineTo(W, CFG.GROUND_Y); g.lineTo(0, CFG.GROUND_Y); g.fill();
+    g.fillStyle = '#8fbc7e';
+    g.beginPath(); g.moveTo(0, 520);
+    for (let x = 0; x <= W; x += 20) g.lineTo(x, 505 - Math.sin(x * 0.03 + 2) * 18);
+    g.lineTo(W, CFG.GROUND_Y); g.lineTo(0, CFG.GROUND_Y); g.fill();
+    // カニの家（昔話の小ネタ：おむすびと柿の種）
+    g.save(); g.translate(26, CFG.GROUND_Y);
+    g.fillStyle = '#c9a36a'; g.fillRect(-14, -26, 30, 26);
+    g.fillStyle = '#8a5a2a'; g.beginPath(); g.moveTo(-20, -24); g.lineTo(1, -44); g.lineTo(22, -24); g.fill();
+    g.fillStyle = '#5a3a1a'; g.fillRect(-4, -16, 10, 16);
+    g.restore();
+    // 地面
+    const gr = g.createLinearGradient(0, CFG.GROUND_Y, 0, H);
+    gr.addColorStop(0, '#9b7448'); gr.addColorStop(1, '#6e4f2e');
+    g.fillStyle = gr; g.fillRect(0, CFG.GROUND_Y, W, H - CFG.GROUND_Y);
+    g.fillStyle = '#7fb352'; g.fillRect(0, CFG.GROUND_Y - 3, W, 7);
+    g.fillStyle = '#6aa043';
+    for (let x = 4; x < W; x += 9) { g.beginPath(); g.moveTo(x, CFG.GROUND_Y + 3); g.lineTo(x + 3, CFG.GROUND_Y - 7 - (x * 7 % 5)); g.lineTo(x + 6, CFG.GROUND_Y + 3); g.fill(); }
+    g.fillStyle = 'rgba(60,40,20,.25)';
+    for (let i = 0; i < 40; i++) { const x = (i * 97) % W, y = CFG.GROUND_Y + 12 + (i * 53) % 56; g.fillRect(x, y, 3, 2); }
+    // 葉の茂み（奥）
+    const leaf = function (x, y, r, col) { g.fillStyle = col; circle(g, x, y, r); g.fill(); };
+    const blobs = [[180, 70, 70], [100, 110, 60], [260, 110, 60], [50, 190, 52], [310, 190, 52], [140, 170, 58], [220, 170, 58], [180, 240, 50], [70, 270, 44], [290, 270, 44], [30, 120, 36], [330, 120, 36], [180, 130, 60]];
+    blobs.forEach(function (b) { leaf(b[0], b[1], b[2], '#4f8a3c'); });
+    blobs.forEach(function (b) { leaf(b[0] - b[2] * 0.25, b[1] - b[2] * 0.3, b[2] * 0.62, '#62a04a'); });
+    // 幹
+    g.fillStyle = '#7a4e2a';
+    g.beginPath(); g.moveTo(166, CFG.GROUND_Y + 2); g.quadraticCurveTo(172, 330, 170, 70); g.lineTo(190, 70); g.quadraticCurveTo(188, 330, 196, CFG.GROUND_Y + 2); g.fill();
+    g.strokeStyle = 'rgba(50,30,15,.35)'; g.lineWidth = 1.5;
+    for (let y = 120; y < CFG.GROUND_Y; y += 26) { g.beginPath(); g.moveTo(172, y); g.quadraticCurveTo(180, y + 6, 188, y + 2); g.stroke(); }
+    // 枝
+    const branch = function (x0, x1, y, th) {
+      g.strokeStyle = '#6b4224'; g.lineCap = 'round'; g.lineWidth = th;
+      g.beginPath(); g.moveTo(x0, y + 1); g.quadraticCurveTo((x0 + x1) / 2, y + 4, x1, y + 1); g.stroke();
+      g.strokeStyle = 'rgba(255,220,170,.25)'; g.lineWidth = 2;
+      g.beginPath(); g.moveTo(x0 + 4, y - 2); g.quadraticCurveTo((x0 + x1) / 2, y + 1, x1 - 4, y - 2); g.stroke();
+    };
+    branch(CFG.RAIL.x0 - 10, CFG.RAIL.x1 + 10, CFG.RAIL.y + 2, 7);
+    CFG.TIERS.forEach(function (t, i) { branch(t.x0 - 6, t.x1 + 6, t.y + 2, 9 - i); });
+    // 手前の葉と、枝に実る柿
+    [[40, 150, 18], [320, 150, 18], [110, 300, 16], [250, 300, 16], [20, 230, 16], [340, 230, 16]].forEach(function (b) { leaf(b[0], b[1] - 14, b[2], '#5c9a44'); });
+    [[90, 132], [240, 128], [60, 210], [300, 212], [140, 290], [215, 288], [130, 78], [235, 74]].forEach(function (p, i) {
+      drawPersimmonShape(g, p[0], p[1], 6, i % 3 === 0 ? 'ripe' : 'green', 0);
+    });
+    return c;
+  }
+
+  function circle(g, x, y, r) { g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); }
+  function ellipse(g, x, y, rx, ry, rot) { g.beginPath(); g.ellipse(x, y, rx, ry, rot || 0, 0, Math.PI * 2); }
+
+  // ---------------- キャラクター描画 ----------------
+  function drawPersimmonShape(g, x, y, r, kind, rot) {
+    g.save(); g.translate(x, y); g.rotate(rot || 0);
+    g.fillStyle = kind === 'ripe' ? '#f28c28' : '#7cb342';
+    ellipse(g, 0, 0, r * 1.08, r); g.fill();
+    g.fillStyle = kind === 'ripe' ? 'rgba(200,70,20,.35)' : 'rgba(40,90,30,.35)';
+    ellipse(g, r * 0.25, r * 0.3, r * 0.7, r * 0.55); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.55)'; ellipse(g, -r * 0.35, -r * 0.35, r * 0.28, r * 0.2, -0.5); g.fill();
+    g.fillStyle = kind === 'ripe' ? '#4a6b1f' : '#2f5a1d';
+    g.beginPath();
+    for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2 + Math.PI / 4; g.ellipse(Math.cos(a) * r * 0.32, -r * 0.82 + Math.sin(a) * r * 0.18, r * 0.36, r * 0.16, a, 0, Math.PI * 2); }
+    g.fill();
+    g.fillRect(-1, -r * 1.25, 2, r * 0.45);
+    g.restore();
+  }
+
+  function drawCrab(g, x, y, o) {
+    o = o || {};
+    const walk = o.walk || 0, t = o.t || 0;
+    g.save(); g.translate(x, y);
+    if (o.flip) { g.translate(0, -6); g.rotate(Math.PI); }
+    const squash = o.heavy ? 0.9 : 1;
+    g.scale(1, squash);
+    // 脚
+    g.strokeStyle = '#b8321f'; g.lineWidth = 3; g.lineCap = 'round';
+    for (let s = -1; s <= 1; s += 2) for (let i = 0; i < 3; i++) {
+      const ph = Math.sin(walk * 0.12 + i * 1.7 + (s > 0 ? 1 : 0)) * 3;
+      const bx = s * (10 + i * 5), by = 6;
+      g.beginPath(); g.moveTo(bx, by - 2); g.lineTo(bx + s * 8, by + 4 + ph * 0.5); g.lineTo(bx + s * 11, by + 12 + ph); g.stroke();
+    }
+    // 腕とはさみ
+    const raise = o.raise || 0;
+    for (let s = -1; s <= 1; s += 2) {
+      const ax = s * 18, ay = -6 - raise;
+      g.beginPath(); g.moveTo(s * 12, -2); g.quadraticCurveTo(s * 20, -4, ax, ay); g.stroke();
+      g.fillStyle = '#e2462f';
+      g.save(); g.translate(ax + s * 2, ay - 6); g.rotate(s * (0.25 + Math.sin(t * 6) * 0.05));
+      ellipse(g, 0, 0, 7, 9); g.fill();
+      g.fillStyle = '#ffd9c6'; g.beginPath(); g.moveTo(-1.5 * s, -9); g.lineTo(0.5 * s, -1); g.lineTo(3 * s, -9); g.fill();
+      g.restore();
+    }
+    // 甲羅
+    g.fillStyle = '#e2462f'; ellipse(g, 0, 0, 22, 14); g.fill();
+    g.fillStyle = '#f26a4f'; ellipse(g, -3, -4, 15, 7); g.fill();
+    g.fillStyle = 'rgba(140,30,15,.35)'; ellipse(g, 0, 7, 18, 5); g.fill();
+    // 目
+    for (let s = -1; s <= 1; s += 2) {
+      g.strokeStyle = '#b8321f'; g.lineWidth = 2.5;
+      g.beginPath(); g.moveTo(s * 6, -10); g.lineTo(s * 7, -18); g.stroke();
+      g.fillStyle = '#fff'; circle(g, s * 7, -20, 4.2); g.fill();
+      g.fillStyle = '#222'; circle(g, s * 7 + (o.lookX || 0), -21.5, 2.1); g.fill();
+    }
+    // 口
+    g.strokeStyle = '#7a1f10'; g.lineWidth = 1.5;
+    g.beginPath();
+    if (o.hurt || o.flip) { g.moveTo(-4, 1); g.lineTo(0, -1); g.lineTo(4, 1); }
+    else g.arc(0, -1, 4, 0.2, Math.PI - 0.2);
+    g.stroke();
+    if (o.heavy) { g.fillStyle = '#9fd8ff'; ellipse(g, 20, -16, 2, 3.2); g.fill(); }
+    g.restore();
+  }
+
+  // n 匹目ほど少し大きく、はちまきの色が変わる
+  const BAND_COLORS = [null, '#ffffff', '#3a7bd5', '#2e9d4a', '#c2361f', '#7b3fb5', '#222222', '#d4a017'];
+  function drawMonkey(g, m, t) {
+    const x = m.x, y = m.y, st = m.state, face = m.face || 1;
+    const lv = m.level || 1;
+    const angry = m.hp <= (m.maxHp || CFG.MONKEY.hp) * 0.5 && st !== 'defeated';
+    g.save(); g.translate(x, y);
+    const sc = Math.min(1.3, 1 + (lv - 1) * 0.04);
+    if (sc !== 1) g.scale(sc, sc);
+    let bob = 0;
+    if (st === 'calm' && !m.target && !m.jump) bob = Math.sin(t * 3) * 1;
+    if (st === 'startle') bob = -6 + Math.sin(t * 40) * 2;
+    if (st === 'chased' || st === 'flee') bob = Math.abs(Math.sin(t * 14)) * -3;
+    if (m.hurtT > 0) g.translate(Math.sin(t * 80) * 2, 0);
+    g.translate(0, bob);
+    const bow = st === 'defeated' && m.landed;
+    if (bow) g.rotate(face * 0.5);
+    // しっぽ
+    g.strokeStyle = '#6b4224'; g.lineWidth = 3.5; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(-face * 8, -8); g.bezierCurveTo(-face * 22, -6, -face * 24, -24, -face * 14 + Math.sin(t * 4) * 2, -26); g.stroke();
+    // 体
+    g.fillStyle = '#8a5a34'; ellipse(g, 0, -14, 12, 14); g.fill();
+    g.fillStyle = '#e7c49a'; ellipse(g, face * 2, -11, 7, 9); g.fill();
+    // 足
+    g.strokeStyle = '#7a4e2a'; g.lineWidth = 4;
+    const run = (st === 'chased' || st === 'flee' || (st === 'calm' && m.target) || st === 'sidestep') ? Math.sin(t * 18) * 4 : 0;
+    g.beginPath(); g.moveTo(-5, -4); g.lineTo(-7 + run, 0); g.moveTo(5, -4); g.lineTo(7 - run, 0); g.stroke();
+    // 腕
+    const windup = st === 'windup' || st === 'throwing';
+    g.lineWidth = 3.5;
+    if (windup) {
+      g.beginPath(); g.moveTo(face * 8, -20); g.lineTo(face * 4, -36); g.stroke();
+      if (st === 'windup') drawPersimmonShape(g, face * 4, -40, 6, 'green', 0);
+      g.beginPath(); g.moveTo(-face * 8, -18); g.lineTo(-face * 14, -12); g.stroke();
+    } else if (st === 'chased' || st === 'stunned' || st === 'startle') {
+      g.beginPath(); g.moveTo(-8, -20); g.lineTo(-14, -34); g.moveTo(8, -20); g.lineTo(14, -34); g.stroke();
+    } else if (bow) {
+      g.beginPath(); g.moveTo(-8, -18); g.lineTo(-4, -6); g.moveTo(8, -18); g.lineTo(4, -6); g.stroke();
+    } else {
+      g.beginPath(); g.moveTo(-8, -18); g.lineTo(-12, -6); g.moveTo(8, -18); g.lineTo(12, -6); g.stroke();
+    }
+    // 頭
+    const hy = -32;
+    g.fillStyle = '#8a5a34'; circle(g, 0, hy, 11); g.fill();
+    g.fillStyle = '#8a5a34'; circle(g, -11, hy, 4); g.fill(); circle(g, 11, hy, 4); g.fill();
+    g.fillStyle = '#f09a80'; circle(g, -11, hy, 2.2); g.fill(); circle(g, 11, hy, 2.2); g.fill();
+    g.fillStyle = angry ? '#ff5a4a' : '#f2a07e';
+    ellipse(g, face * 1.5, hy + 2, 8, 7.5); g.fill();
+    // はちまき（2匹目から）
+    const bandCol = BAND_COLORS[Math.min(lv, BAND_COLORS.length) - 1];
+    if (bandCol) {
+      g.strokeStyle = bandCol; g.lineWidth = 3.2; g.lineCap = 'round';
+      g.beginPath(); g.arc(0, hy, 10.6, Math.PI * 1.08, Math.PI * 1.92); g.stroke();
+      g.lineWidth = 2.2;
+      const tx = -face * 9, ty = hy - 6, fl = Math.sin(t * 9) * 2;
+      g.beginPath(); g.moveTo(tx, ty); g.lineTo(tx - face * 8, ty - 3 + fl); g.moveTo(tx, ty); g.lineTo(tx - face * 7, ty + 4 - fl); g.stroke();
+      if (lv >= 8) { g.fillStyle = '#ffe14a'; star(g, 0, hy - 9, 2.6); }
+    }
+    // 目
+    g.fillStyle = '#222'; g.strokeStyle = '#222'; g.lineWidth = 1.6;
+    if (st === 'stunned') {
+      [-3.5, 3.5].forEach(function (ex) { g.beginPath(); g.moveTo(face * 1.5 + ex - 2, hy - 2); g.lineTo(face * 1.5 + ex + 2, hy + 2); g.moveTo(face * 1.5 + ex + 2, hy - 2); g.lineTo(face * 1.5 + ex - 2, hy + 2); g.stroke(); });
+    } else if (bow) {
+      [-3.5, 3.5].forEach(function (ex) { g.beginPath(); g.arc(face * 1.5 + ex, hy, 2, 0, Math.PI); g.stroke(); });
+      g.fillStyle = '#7fd0ff'; ellipse(g, face * 1.5 + 5, hy + 4, 1.5, 2.5); g.fill();
+    } else {
+      const big = st === 'chased' || st === 'startle' || st === 'notice' || st === 'flee';
+      [-3.5, 3.5].forEach(function (ex) {
+        if (big) { g.fillStyle = '#fff'; circle(g, face * 1.5 + ex, hy - 1, 2.8); g.fill(); g.fillStyle = '#222'; circle(g, face * 1.5 + ex, hy - 1, 1.3); g.fill(); }
+        else { circle(g, face * 1.5 + ex + face * 0.6, hy - 1, 1.6); g.fill(); }
+      });
+      if (angry) { g.beginPath(); g.moveTo(face * 1.5 - 6, hy - 6); g.lineTo(face * 1.5 - 1.5, hy - 4); g.moveTo(face * 1.5 + 6, hy - 6); g.lineTo(face * 1.5 + 1.5, hy - 4); g.stroke(); }
+    }
+    // 口
+    g.beginPath();
+    if (st === 'chased' || st === 'startle' || st === 'flee' || m.hurtT > 0) { g.fillStyle = '#5a1a10'; ellipse(g, face * 1.5, hy + 5, 2.4, 2); g.fill(); }
+    else if (windup) { g.moveTo(face * 1.5 - 3, hy + 4); g.lineTo(face * 1.5 + 3, hy + 5); g.stroke(); }
+    else { g.arc(face * 1.5, hy + 3, 3, 0.15, Math.PI - 0.15); g.stroke(); }
+    // 汗
+    if (st === 'chased' || st === 'flee' || st === 'notice' || st === 'sidestep') {
+      g.fillStyle = '#9fd8ff'; ellipse(g, -face * 12, hy - 6 + (t * 30 % 8), 1.8, 3); g.fill();
+    }
+    // 怒りマーク
+    if (angry && (st === 'calm' || st === 'windup' || st === 'throwing')) {
+      g.strokeStyle = '#ff3b2f'; g.lineWidth = 1.8;
+      const ax = -face * 9, ay = hy - 11;
+      g.beginPath(); g.moveTo(ax - 3, ay - 1); g.lineTo(ax - 1, ay - 1); g.lineTo(ax - 1, ay - 3); g.moveTo(ax + 3, ay - 1); g.lineTo(ax + 1, ay - 1); g.lineTo(ax + 1, ay - 3);
+      g.moveTo(ax - 3, ay + 3); g.lineTo(ax - 1, ay + 3); g.lineTo(ax - 1, ay + 5); g.moveTo(ax + 3, ay + 3); g.lineTo(ax + 1, ay + 3); g.lineTo(ax + 1, ay + 5); g.stroke();
+    }
+    // 目を回す星
+    if (st === 'stunned') {
+      g.fillStyle = '#ffe14a';
+      for (let i = 0; i < 3; i++) { const a = t * 6 + i * 2.1; star(g, Math.cos(a) * 13, hy - 14 + Math.sin(a) * 4, 3.2); }
+    }
+    g.restore();
+  }
+
+  function star(g, x, y, r) {
+    g.beginPath();
+    for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r; g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); }
+    g.closePath(); g.fill();
+  }
+
+  function drawUsu(g, x, y, o) {
+    o = o || {};
+    g.save(); g.translate(x, y); g.rotate(o.rot || 0);
+    const k = o.size || 1; g.scale(k, k);
+    // 胴（上が広い臼）
+    g.fillStyle = '#a8713c';
+    g.beginPath(); g.moveTo(-17, -12); g.lineTo(17, -12); g.lineTo(13, 13); g.lineTo(-13, 13); g.closePath(); g.fill();
+    g.fillStyle = '#8b5a2b'; g.fillRect(-14, 5, 28, 3); g.fillRect(-16, -6, 32, 3);
+    g.fillStyle = '#c48a52'; ellipse(g, 0, -12, 17, 5); g.fill();
+    g.fillStyle = '#5e3a1a'; ellipse(g, 0, -12, 11, 3); g.fill();
+    // 顔
+    const look = o.look || 0, down = o.down ? 2 : 0;
+    g.fillStyle = '#fff'; circle(g, -6, -1, 3.4); g.fill(); circle(g, 6, -1, 3.4); g.fill();
+    g.fillStyle = '#222'; circle(g, -6 + look, -1 + down, 1.8); g.fill(); circle(g, 6 + look, -1 + down, 1.8); g.fill();
+    g.strokeStyle = '#3a2410'; g.lineWidth = 1.6;
+    g.beginPath(); g.moveTo(-9, -6); g.lineTo(-3, -4.5); g.moveTo(9, -6); g.lineTo(3, -4.5); g.stroke();
+    g.beginPath();
+    if (o.tired) { g.moveTo(-3, 7); g.lineTo(3, 7); }
+    else g.arc(0, 5, 3, 0.2, Math.PI - 0.2);
+    g.stroke();
+    if (o.arms) {
+      g.strokeStyle = '#8b5a2b'; g.lineWidth = 3; g.lineCap = 'round';
+      const sw = Math.sin((o.t || 0) * 14) * 3;
+      g.beginPath(); g.moveTo(-14, 0); g.lineTo(-20, -6 + sw); g.moveTo(14, 0); g.lineTo(20, -6 - sw); g.stroke();
+    }
+    g.restore();
+  }
+
+  function drawBee(g, x, y, t, flip) {
+    g.save(); g.translate(x, y); if (flip) g.scale(-1, 1);
+    g.fillStyle = 'rgba(230,245,255,.85)';
+    const wf = Math.sin(t * 60) * 0.5;
+    ellipse(g, -2, -7, 5, 7, -0.6 + wf); g.fill(); ellipse(g, 4, -7, 5, 7, 0.6 - wf); g.fill();
+    g.fillStyle = '#ffcc1a'; ellipse(g, 0, 0, 9, 6.5); g.fill();
+    g.fillStyle = '#2a1a0a'; g.fillRect(-3, -6, 2.5, 12); g.fillRect(2, -6, 2.5, 12);
+    g.beginPath(); g.moveTo(-9, -1.5); g.lineTo(-14, 0); g.lineTo(-9, 1.5); g.fill();
+    g.fillStyle = '#ffcc1a'; circle(g, 8, -1, 4.5); g.fill();
+    g.fillStyle = '#222'; circle(g, 10, -2, 1.3); g.fill();
+    g.strokeStyle = '#222'; g.lineWidth = 1; g.beginPath(); g.moveTo(10, -5); g.lineTo(13, -9); g.stroke();
+    g.restore();
+  }
+
+  function drawChestnut(g, x, y, o) {
+    o = o || {};
+    g.save(); g.translate(x, y);
+    if (o.shake) g.translate(Math.sin(o.t * 50) * o.shake, 0);
+    g.rotate(o.rot || 0);
+    if (o.glow) { g.fillStyle = 'rgba(255,90,40,' + (0.25 + o.glow * 0.4) + ')'; circle(g, 0, 0, 14 + o.glow * 4); g.fill(); }
+    g.fillStyle = '#7a3e1c';
+    g.beginPath(); g.moveTo(0, -11); g.quadraticCurveTo(11, -6, 10, 4); g.quadraticCurveTo(0, 10, -10, 4); g.quadraticCurveTo(-11, -6, 0, -11); g.fill();
+    g.fillStyle = '#e8c690'; g.beginPath(); g.moveTo(-10, 4); g.quadraticCurveTo(0, 10, 10, 4); g.quadraticCurveTo(0, 2, -10, 4); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.4)'; ellipse(g, -4, -5, 2.5, 1.5, -0.5); g.fill();
+    g.fillStyle = '#fff'; circle(g, -3.5, -1, 2.2); g.fill(); circle(g, 3.5, -1, 2.2); g.fill();
+    g.fillStyle = '#222'; circle(g, -3.5, -0.6, 1.1); g.fill(); circle(g, 3.5, -0.6, 1.1); g.fill();
+    g.restore();
+  }
+
+  function drawNeedle(g, x, y, rot, len) {
+    g.save(); g.translate(x, y); g.rotate(rot || 0);
+    len = len || 22;
+    g.strokeStyle = '#dfe6ee'; g.lineWidth = 2.6; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(0, len / 2); g.lineTo(0, -len / 2); g.stroke();
+    g.strokeStyle = '#8796a6'; g.lineWidth = 1; g.beginPath(); g.moveTo(0.8, len / 2); g.lineTo(0.8, -len / 2 + 2); g.stroke();
+    g.strokeStyle = '#8796a6'; ellipse(g, 0, len / 2 - 3, 1.2, 2.5); g.stroke();
+    g.restore();
+  }
+
+  function drawItemIcon(g, kind, x, y, k, t) {
+    g.save(); g.translate(x, y); g.scale(k, k);
+    if (kind === 'bee') drawBee(g, 0, 0, t || 0, false);
+    else if (kind === 'chestnut') drawChestnut(g, 0, 0, {});
+    else if (kind === 'needle') { drawNeedle(g, -4, 0, 0.5, 22); drawNeedle(g, 4, 0, -0.3, 18); }
+    else if (kind === 'usu') drawUsu(g, 0, 0, { size: 0.9 });
+    else if (kind === 'ripe') drawPersimmonShape(g, 0, 2, 11, 'ripe', 0);
+    g.restore();
+  }
+
+  // ---------------- 演出（パーティクル・文字・揺れ） ----------------
+  const fx = { parts: [], texts: [], ghosts: [], rings: [], shake: 0, flash: 0, hitstop: 0, flee: null, leaver: null };
+  function addPart(x, y, n, o) {
+    for (let i = 0; i < n && fx.parts.length < 220; i++) {
+      const a = (o.angle != null ? o.angle : -Math.PI / 2) + (Math.random() - 0.5) * (o.spread != null ? o.spread : Math.PI * 2);
+      const sp = (o.speed || 120) * (0.4 + Math.random() * 0.8);
+      fx.parts.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: o.life || 0.6, max: o.life || 0.6, col: o.col || '#fff', size: o.size || 3, g: o.g != null ? o.g : 400, shape: o.shape || 'c' });
+    }
+  }
+  function addText(x, y, text, col, size, life) {
+    fx.texts.push({ x: x, y: y, text: text, col: col || '#fff', size: size || 14, life: life || 0.9, max: life || 0.9 });
+  }
+  function addRing(x, y, col, r0, r1, life) { fx.rings.push({ x: x, y: y, col: col, r0: r0, r1: r1, life: life, max: life }); }
+  function shake(a) { if (!reduceMotion) fx.shake = Math.max(fx.shake, a); }
+
+  function updateFx(dt) {
+    for (let i = fx.parts.length - 1; i >= 0; i--) {
+      const p = fx.parts[i]; p.life -= dt;
+      if (p.life <= 0) { fx.parts.splice(i, 1); continue; }
+      p.vy += p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+    }
+    for (let i = fx.texts.length - 1; i >= 0; i--) { const s = fx.texts[i]; s.life -= dt; s.y -= 28 * dt; if (s.life <= 0) fx.texts.splice(i, 1); }
+    for (let i = fx.ghosts.length - 1; i >= 0; i--) { fx.ghosts[i].life -= dt; if (fx.ghosts[i].life <= 0) fx.ghosts.splice(i, 1); }
+    for (let i = fx.rings.length - 1; i >= 0; i--) { fx.rings[i].life -= dt; if (fx.rings[i].life <= 0) fx.rings.splice(i, 1); }
+    if (fx.flee) { fx.flee.life -= dt; if (fx.flee.life <= 0) fx.flee = null; }
+    if (fx.leaver) { const L2 = fx.leaver; L2.t += dt; L2.x += L2.face * 70 * dt; if (L2.x < -40 || L2.x > CFG.W + 40) fx.leaver = null; }
+    fx.shake = Math.max(0, fx.shake - dt * 30);
+    fx.flash = Math.max(0, fx.flash - dt * 3);
+  }
+
+  // ---------------- 音（Web Audio 合成） ----------------
+  const Snd = {
+    ctx: null, master: null, bgmGain: null, muted: false, nextT: 0, step: 0, timer: null, tempo: 112,
+    init: function () {
+      if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      try {
+        this.ctx = new AC();
+        this.master = this.ctx.createGain(); this.master.gain.value = this.muted ? 0 : 0.7;
+        const comp = this.ctx.createDynamicsCompressor(); comp.threshold.value = -14;
+        this.master.connect(comp); comp.connect(this.ctx.destination);
+        this.bgmGain = this.ctx.createGain(); this.bgmGain.gain.value = 0.32; this.bgmGain.connect(this.master);
+        const len = this.ctx.sampleRate * 0.6, buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate), d = buf.getChannelData(0);
+        for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+        this.noiseBuf = buf;
+      } catch (e) { this.ctx = null; }
+    },
+    setMuted: function (m) {
+      this.muted = m;
+      if (this.master) this.master.gain.setTargetAtTime(m ? 0 : 0.7, this.ctx.currentTime, 0.02);
+    },
+    tone: function (f, dur, o) {
+      if (!this.ctx) return;
+      o = o || {};
+      const c = this.ctx, t = (this.at != null ? this.at : c.currentTime) + (o.delay || 0);
+      const osc = c.createOscillator(), gn = c.createGain();
+      osc.type = o.type || 'square';
+      osc.frequency.setValueAtTime(f, t);
+      if (o.to) osc.frequency.exponentialRampToValueAtTime(Math.max(20, o.to), t + dur);
+      const v = o.vol != null ? o.vol : 0.12;
+      gn.gain.setValueAtTime(0.0001, t);
+      gn.gain.exponentialRampToValueAtTime(v, t + (o.att || 0.005));
+      gn.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.connect(gn); gn.connect(o.bus || this.master);
+      osc.start(t); osc.stop(t + dur + 0.02);
+    },
+    noise: function (dur, o) {
+      if (!this.ctx || !this.noiseBuf) return;
+      o = o || {};
+      const c = this.ctx, t = (this.at != null ? this.at : c.currentTime) + (o.delay || 0);
+      const src = c.createBufferSource(); src.buffer = this.noiseBuf;
+      const f = c.createBiquadFilter(); f.type = o.ftype || 'lowpass'; f.frequency.setValueAtTime(o.freq || 1200, t);
+      if (o.fto) f.frequency.exponentialRampToValueAtTime(o.fto, t + dur);
+      const gn = c.createGain(); const v = o.vol != null ? o.vol : 0.2;
+      gn.gain.setValueAtTime(v, t); gn.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(f); f.connect(gn); gn.connect(o.bus || this.master);
+      src.start(t); src.stop(t + dur + 0.02);
+    },
+    // 撮影用：capture 中は鳴らさずに記録し、render で任意の AudioContext・時刻に同じ音を鳴らす
+    capturing: false, queue: [], at: null,
+    play: function (name, p) {
+      if (this.capturing) { this.queue.push({ name: name, args: [p] }); return; }
+      if (!this.ctx || this.muted) return;
+      this.voice(name, p);
+    },
+    voice: function (name, p) {
+
+      switch (name) {
+        case 'throw': this.noise(0.12, { ftype: 'bandpass', freq: 900, fto: 2500, vol: 0.08 }); break;
+        case 'windup': this.tone(520, 0.08, { type: 'triangle', vol: 0.05, to: 700 }); break;
+        case 'crabHit': this.tone(180, 0.25, { type: 'square', to: 60, vol: 0.18 }); this.noise(0.18, { freq: 600, vol: 0.25 }); break;
+        case 'greenLand': this.noise(0.06, { freq: 500, vol: 0.06 }); break;
+        case 'catch': [784, 988, 1319].forEach(function (f, i) { Snd.tone(f, 0.12, { type: 'triangle', vol: 0.1, delay: i * 0.05 }); }); break;
+        case 'heal': [659, 880, 1047, 1319].forEach(function (f, i) { Snd.tone(f, 0.14, { type: 'sine', vol: 0.12, delay: i * 0.06 }); }); break;
+        case 'splat': this.noise(0.14, { freq: 400, fto: 120, vol: 0.15 }); break;
+        case 'pick': this.tone(660, 0.07, { type: 'square', vol: 0.07 }); this.tone(990, 0.1, { type: 'square', vol: 0.07, delay: 0.06 }); break;
+        case 'full': this.tone(220, 0.1, { type: 'square', vol: 0.05 }); break;
+        case 'needle': this.tone(1800, 0.03, { type: 'square', vol: 0.025 }); break;
+        case 'needleHit': this.tone(1400, 0.04, { type: 'triangle', vol: 0.05, to: 900 }); break;
+        case 'bee': this.tone(220, 0.5, { type: 'sawtooth', vol: 0.035, to: 260 }); break;
+        case 'sting': this.tone(900, 0.08, { type: 'sawtooth', vol: 0.06, to: 300 }); break;
+        case 'place': this.tone(300, 0.08, { type: 'triangle', vol: 0.1 }); break;
+        case 'tick': this.tone(1200, 0.03, { type: 'square', vol: 0.04 }); break;
+        case 'blast': this.noise(0.45, { freq: 2200, fto: 200, vol: 0.35 }); this.tone(120, 0.3, { type: 'sine', vol: 0.25, to: 40 }); break;
+        case 'monkeyHurt': this.tone(700, 0.12, { type: 'square', vol: 0.06, to: 1100 }); break;
+        case 'eek': this.tone(1100, 0.08, { type: 'square', vol: 0.05, to: 1500 }); this.tone(1300, 0.1, { type: 'square', vol: 0.05, to: 1700, delay: 0.09 }); break;
+        case 'notice': this.tone(880, 0.06, { type: 'triangle', vol: 0.06 }); this.tone(1175, 0.08, { type: 'triangle', vol: 0.06, delay: 0.07 }); break;
+        case 'climb': for (let i = 0; i < 4; i++) this.tone(260 + i * 40, 0.05, { type: 'triangle', vol: 0.06, delay: i * 0.12 }); break;
+        case 'armed': this.tone(392, 0.1, { type: 'triangle', vol: 0.09 }); this.tone(587, 0.16, { type: 'triangle', vol: 0.09, delay: 0.09 }); break;
+        case 'drop': this.tone(1400, 0.35, { type: 'sine', vol: 0.08, to: 300 }); break;
+        case 'usuHit': this.tone(90, 0.5, { type: 'sine', vol: 0.4, to: 35 }); this.noise(0.35, { freq: 900, fto: 100, vol: 0.4 }); [523, 659, 784].forEach(function (f, i) { Snd.tone(f, 0.25, { type: 'triangle', vol: 0.09, delay: 0.12 + i * 0.07 }); }); break;
+        case 'usuMiss': this.tone(160, 0.2, { type: 'sine', vol: 0.25, to: 60 }); this.tone(330, 0.25, { type: 'triangle', vol: 0.06, to: 200, delay: 0.1 }); break;
+        case 'guard': this.tone(240, 0.12, { type: 'square', vol: 0.06 }); this.tone(240, 0.12, { type: 'square', vol: 0.06, delay: 0.14 }); break;
+        case 'feint': this.tone(600, 0.1, { type: 'triangle', vol: 0.06, to: 400 }); break;
+        case 'empty': this.tone(200, 0.06, { type: 'triangle', vol: 0.05 }); break;
+        case 'spawn': this.tone(1046, 0.06, { type: 'sine', vol: 0.05 }); this.tone(1568, 0.08, { type: 'sine', vol: 0.05, delay: 0.05 }); break;
+        case 'win': [523, 659, 784, 1047, 784, 1047, 1319].forEach(function (f, i) { Snd.tone(f, 0.22, { type: 'triangle', vol: 0.12, delay: i * 0.11 }); }); break;
+        case 'lose': [392, 349, 311, 262].forEach(function (f, i) { Snd.tone(f, 0.3, { type: 'triangle', vol: 0.12, delay: i * 0.2 }); }); break;
+      }
+    },
+    capture: function (on) { this.capturing = !!on; if (on) this.queue = []; },
+    drain: function () { return this.queue.splice(0); },
+    render: function (ctx, name, args, when) {
+      const keep = { ctx: this.ctx, master: this.master, noiseBuf: this.noiseBuf, at: this.at };
+      if (!ctx.__sk) {
+        const m = ctx.createGain(); m.gain.value = 0.7; m.connect(ctx.destination);
+        const len = Math.floor(ctx.sampleRate * 0.6), buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+        let r = 12345; for (let i = 0; i < len; i++) { r = (r * 1103515245 + 12345) & 0x7fffffff; d[i] = r / 0x3fffffff - 1; }
+        ctx.__sk = { master: m, noiseBuf: buf };
+      }
+      this.ctx = ctx; this.master = ctx.__sk.master; this.noiseBuf = ctx.__sk.noiseBuf; this.at = when;
+      try { this.voice(name, (args || [])[0]); } finally { Object.assign(this, keep); }
+    },
+    // 和風5音音階の短いループ
+    startBgm: function () {
+      if (!this.ctx || this.timer) return;
+      this.nextT = this.ctx.currentTime + 0.1; this.step = 0;
+      const self = this;
+      this.timer = setInterval(function () { self.schedule(); }, 50);
+    },
+    stopBgm: function () { if (this.timer) { clearInterval(this.timer); this.timer = null; } },
+    schedule: function () {
+      const c = this.ctx; if (!c) return;
+      const mel = [0, -1, 2, 3, 4, -1, 3, 2, 0, -1, 2, -1, 1, -1, -1, -1, 4, -1, 5, 4, 3, -1, 2, 3, 2, -1, 0, -1, 1, 0, -1, -1];
+      const scale = [293.7, 329.6, 392, 440, 493.9, 587.3, 659.3];
+      while (this.nextT < c.currentTime + 0.15) {
+        const s = this.step % 32, dt = 60 / this.tempo / 2, t = this.nextT - c.currentTime;
+        if (!this.muted) {
+          const n = mel[s];
+          if (n >= 0) this.tone(scale[n], dt * 1.6, { type: 'triangle', vol: 0.07, delay: t, bus: this.bgmGain });
+          if (s % 4 === 0) this.tone(s % 8 === 0 ? 73.4 : 110, dt * 1.8, { type: 'sine', vol: 0.12, delay: t, bus: this.bgmGain });
+          if (s % 4 === 0) this.noise(0.08, { freq: 180, vol: 0.12, delay: t, bus: this.bgmGain });
+          if (s % 4 === 2) this.noise(0.03, { ftype: 'highpass', freq: 5000, vol: 0.03, delay: t, bus: this.bgmGain });
+        }
+        this.nextT += dt; this.step++;
+      }
+    },
+  };
+
+  // ---------------- 入力 ----------------
+  const input = { left: false, right: false, dragging: false, pid: null, startX: 0, crabStart: 0, targetX: null, action: false };
+  function toWorldX(clientX) { const r = stage.getBoundingClientRect(); return (clientX - r.left) / r.width * W; }
+  window.addEventListener('keydown', function (e) {
+    if (e.repeat && (e.code === 'Space' || e.code === 'Enter')) return;
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') { input.left = true; input.targetX = null; }
+    else if (e.code === 'ArrowRight' || e.code === 'KeyD') { input.right = true; input.targetX = null; }
+    else if (e.code === 'Space' || e.code === 'Enter' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+      e.preventDefault();
+      if (mode === 'play') { input.action = true; pressBtn(); }
+      else if ((mode === 'title' || mode === 'howto') && e.code !== 'ArrowUp') { $('howtoScreen').classList.add('hidden'); startGame(); }
+      else if (mode === 'result' && resultReady && e.code !== 'ArrowUp') startGame();
+    } else if (e.code === 'KeyM') toggleMute();
+    else if (mode === 'howto' && e.code === 'Escape') showHowto(false);
+    else if (e.code === 'KeyP' || e.code === 'Escape') togglePause();
+    if (e.code.indexOf('Arrow') === 0) e.preventDefault();
+  });
+  window.addEventListener('keyup', function (e) {
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') input.left = false;
+    else if (e.code === 'ArrowRight' || e.code === 'KeyD') input.right = false;
+  });
+  cv.addEventListener('pointerdown', function (e) {
+    if (mode !== 'play') return;
+    if (paused) { togglePause(); return; }
+    input.dragging = true; input.pid = e.pointerId; input.startX = toWorldX(e.clientX);
+    input.crabStart = world ? world.crab.x : 180; input.targetX = input.crabStart;
+    try { cv.setPointerCapture(e.pointerId); } catch (err) { /* noop */ }
+    dragUsed = true;
+  });
+  cv.addEventListener('pointermove', function (e) {
+    if (!input.dragging || e.pointerId !== input.pid) return;
+    // 相対ドラッグ：指でカニが隠れないよう、指の移動量だけカニを動かす（1.25倍）
+    input.targetX = L.clamp(input.crabStart + (toWorldX(e.clientX) - input.startX) * 1.25, CFG.CRAB.minX, CFG.CRAB.maxX);
+  });
+  const endDrag = function (e) { if (e.pointerId === input.pid) { input.dragging = false; input.pid = null; input.targetX = null; } };
+  cv.addEventListener('pointerup', endDrag); cv.addEventListener('pointercancel', endDrag);
+  const actBtn = $('actBtn');
+  actBtn.addEventListener('pointerdown', function (e) { e.preventDefault(); if (mode === 'play') { if (paused) { togglePause(); return; } input.action = true; pressBtn(); } });
+  function pressBtn() { actBtn.classList.add('press'); later(0.11, function () { actBtn.classList.remove('press'); }); }
+  $('muteBtn').addEventListener('click', toggleMute);
+  function toggleMute() { Snd.setMuted(!Snd.muted); $('muteBtn').classList.toggle('off', Snd.muted); }
+  let dragUsed = false;
+
+  // ---------------- ゲーム進行 ----------------
+  let world = null, mode = 'title', paused = false, timeScale = 1, manual = false, resultReady = false;
+  const eventLog = [];
+  let acc = 0, lastNow = performance.now();
+  // ゲーム内の時間で動くタイマー（撮影時の仮想時刻でもずれない）
+  const laters = [];
+  function later(sec, fn) { const o = { t: sec, fn: fn }; laters.push(o); return o; }
+  function cancelLater(o) { if (o) o.t = -1e9, o.fn = null; }
+  function tickLaters(dt) {
+    for (let i = laters.length - 1; i >= 0; i--) { const o = laters[i]; o.t -= dt; if (o.t <= 0) { laters.splice(i, 1); if (o.fn) o.fn(); } }
+  }
+  const STEP = 1 / 60;
+  let lastMaxHp = -1;
+  let hintTimer = 0, lastHeld = undefined, lastHp = -1, lastMonkeyHp = -1, fuseTickT = 0;
+
+  function startGame(seed) {
+    Snd.init(); Snd.startBgm();
+    world = L.createWorld(seed != null ? seed : (Math.random() * 1e9) | 0);
+    fx.parts.length = 0; fx.texts.length = 0; fx.ghosts.length = 0; fx.rings.length = 0; fx.flee = null; fx.leaver = null; fx.shake = 0; fx.hitstop = 0;
+    mode = 'play'; paused = false; resultReady = false; acc = 0; setMenu(false);
+    lastHeld = undefined; lastHp = -1; lastMonkeyHp = -1;
+    $('startScreen').classList.add('hidden');
+    $('resultScreen').classList.add('hidden');
+    $('pauseNote').style.display = 'none';
+    $('dragHint').style.display = dragUsed ? 'none' : '';
+    $('wave').innerHTML = '<b>1</b>匹目'; $('gaugeLabel').textContent = world.ws.name;
+    cancelLater(bannerTimer); $('banner').className = '';
+    showHint('猿の<b>青柿</b>をよけながら、地面の<b>仲間</b>を拾おう！', 3.2);
+    updateHud(true);
+  }
+  $('startBtn').addEventListener('click', function () { startGame(); });
+  function setMenu(on) { $('stage').classList.toggle('menu', on); }
+  function showHowto(on) {
+    mode = on ? 'howto' : 'title'; setMenu(true);
+    $('howtoScreen').classList.toggle('hidden', !on);
+    $('startScreen').classList.toggle('hidden', on);
+  }
+  $('howtoBtn').addEventListener('click', function () { Snd.init(); showHowto(true); });
+  $('howBackBtn').addEventListener('click', function () { showHowto(false); });
+  $('howStartBtn').addEventListener('click', function () { $('howtoScreen').classList.add('hidden'); startGame(); });
+  $('howTitles').innerHTML = CFG.TITLES.filter(function (t) { return t.at > 0; }).map(function (t) { return '<span><i>' + t.at + '匹</i>' + t.name + '</span>'; }).join('');
+  $('retryBtn').addEventListener('click', function () { if (resultReady) startGame(); });
+  $('titleBtn').addEventListener('click', function () {
+    mode = 'title'; world = null; setMenu(true); $('resultScreen').classList.add('hidden'); $('startScreen').classList.remove('hidden');
+  });
+
+  function togglePause() {
+    if (mode !== 'play') return;
+    paused = !paused;
+    $('pauseNote').style.display = paused ? 'block' : 'none';
+    if (paused) Snd.stopBgm(); else { Snd.init(); Snd.startBgm(); }
+  }
+  document.addEventListener('visibilitychange', function () { if (document.hidden && mode === 'play' && !paused) togglePause(); });
+
+  function currentInput() {
+    const i = { moveX: (input.right ? 1 : 0) - (input.left ? 1 : 0), targetX: input.targetX, action: input.action };
+    input.action = false;
+    return i;
+  }
+
+  function stepOnce(inp) {
+    L.stepWorld(world, STEP, inp || currentInput());
+    const evs = world.events.splice(0);
+    for (const e of evs) { handleEvent(e); if (eventLog.length < 500) eventLog.push(e); }
+  }
+
+  const HINTS = {
+    pick_usu: '<b>臼</b>を持つと足が遅くなる。仕掛けたい場所で<b>アクション</b>！',
+    pick_chestnut: '<b>栗</b>は置いて約2秒で<b>猿めがけて</b>飛び、そばで破裂！ 猿は<b>反対側</b>へ逃げる',
+    pick_bee: '<b>蜂</b>は猿を追い回す。猿はカニの<b>反対側</b>へ逃げ、柿も止まる！',
+    usuAvoid: '落ち着いた猿は<b>臼の下を避ける</b>！ 栗や蜂で<b>慌てさせて</b>追い込もう',
+    guard: 'ゲージの<b>「臼」ゾーン</b>は臼でしか削れない！ とどめは臼で！',
+    usuMiss: '外れた臼は地面で待っている。<b>拾って仕掛け直そう</b>',
+  };
+  function showHint(html, sec) {
+    const el = $('hint'); el.innerHTML = html; el.classList.add('show'); hintTimer = sec || 3.2;
+  }
+
+  function handleEvent(e) {
+    const m = world.monkey;
+    switch (e.type) {
+      case 'throw': Snd.play('throw'); break;
+      case 'windup': Snd.play('windup'); break;
+      case 'feint':
+        addText(e.x, e.y - 58, 'フェイント！', '#fff', 12, 0.8); Snd.play('feint'); break;
+      case 'crabHit':
+        fx.hitstop = 0.09; shake(9); fx.flash = 0.5;
+        addPart(e.x, e.y, 14, { col: '#9ccc65', speed: 200, size: 3.5 });
+        addRing(e.x, e.y, '#ff5a3a', 6, 30, 0.35);
+        addText(world.crab.x, CFG.CRAB.y - 36, 'いたっ！', '#ff5a3a', 15);
+        Snd.play('crabHit'); break;
+      case 'greenLand': {
+        addPart(e.x, CFG.GROUND_Y - 2, 6, { col: '#8bc34a', speed: 90, spread: Math.PI, size: 2.5 });
+        const edge = Math.abs(e.dx) - (CFG.CRAB.halfW - 2) - CFG.GREEN_R;
+        if (world.phase === 'play' && edge >= 0 && edge < 14 && world.crab.invuln <= 0) addText(e.x, CFG.GROUND_Y - 30, 'セーフ', '#fff', 11, 0.6);
+        Snd.play('greenLand'); break;
+      }
+      case 'ripeCatch':
+        addRing(e.x, e.y, '#ffd34d', 8, 34, 0.4);
+        addPart(e.x, e.y, 12, { col: '#ffb347', speed: 160, size: 3, g: 200 });
+        addText(e.x, e.y - 16, e.heal ? '+100 回復！' : '+100', e.heal ? '#7dff8a' : '#ffe14a', 14);
+        Snd.play(e.heal ? 'heal' : 'catch'); break;
+      case 'ripeMiss':
+        addPart(e.x, CFG.GROUND_Y - 3, 10, { col: '#f28c28', speed: 110, spread: Math.PI, size: 3 });
+        if (world.phase !== 'lose' && e.gap < 40) {
+          addText(e.x, CFG.GROUND_Y - 34, 'おしい！あと' + Math.max(1, Math.round(e.gap)) + 'px', '#ffd9a0', 12, 1.2);
+          fx.ghosts.push({ type: 'ripeMiss', x: e.x, cx: world.crab.x, life: 1.2, max: 1.2 });
+        }
+        Snd.play('splat'); break;
+      case 'pick':
+        addRing(e.x, CFG.GROUND_Y - 14, '#fff', 6, 28, 0.3);
+        addText(e.x, CFG.GROUND_Y - 48, e.kind === 'needle' ? '針、連射！' : e.recovered ? '臼を回収' : NAMES[e.kind] + 'を持った', '#fff', 13, 0.9);
+        Snd.play('pick'); break;
+      case 'handsFull': addText(e.x, CFG.GROUND_Y - 44, '手がいっぱい', '#ddd', 11, 0.8); Snd.play('full'); break;
+      case 'needleFire': Snd.play('needle'); break;
+      case 'needleHit':
+        addPart(e.x, e.y, 3, { col: '#e8f0ff', speed: 90, size: 2 });
+        addText(e.x + (Math.random() - 0.5) * 16, e.y - 12, '2', '#e8f0ff', 11, 0.5);
+        Snd.play('needleHit'); break;
+      case 'spawnItem': addRing(e.x, CFG.GROUND_Y - 14, '#fff3c0', 4, 24, 0.5); Snd.play('spawn'); break;
+      case 'itemExpire': addPart(e.x, CFG.GROUND_Y - 14, 6, { col: '#fff', speed: 50, size: 2, g: -40 }); break;
+      case 'use':
+        if (e.kind === 'bee') { Snd.play('bee'); addText(e.x, CFG.CRAB.y - 40, 'いけっ、蜂！', '#ffe14a', 13); }
+        else if (e.kind === 'chestnut') { Snd.play('place'); }
+        else if (e.kind === 'usu') { Snd.play('place'); addText(e.x, CFG.CRAB.y - 40, '臼、たのんだ！', '#ffd9a0', 13); }
+        break;
+      case 'empty': addText(world.crab.x, CFG.CRAB.y - 38, 'なにも持ってない', '#eee', 11, 0.7); Snd.play('empty'); break;
+      case 'beeSting':
+        addPart(e.x, e.y, 5, { col: '#ffe14a', speed: 120, size: 2.5 });
+        addText(e.x + 14, e.y - 16, 'チクッ', '#ffe14a', 11, 0.6);
+        Snd.play('sting'); break;
+      case 'blast':
+        // 地面で弾けて、猿へ向けて打ち上がる
+        shake(3);
+        addPart(e.x, e.y, 10, { col: '#ffb347', speed: 160, spread: Math.PI * 0.6, size: 3, g: 500 });
+        addRing(e.x, e.y, '#ff8a3a', 6, 26, 0.3);
+        addText(e.x, e.y - 26, 'ポン！', '#fff', 13, 0.5);
+        Snd.play('place'); break;
+      case 'chestnutBurst':
+        // 猿の高さで破裂：半径 r の範囲を輪で見せ、外れたら距離を出す
+        fx.hitstop = Math.max(fx.hitstop, 0.05); shake(6);
+        addPart(e.x, e.y, 22, { col: '#ffb347', speed: 260, spread: Math.PI * 2, size: 4, g: 300 });
+        addPart(e.x, e.y, 10, { col: '#fff3c0', speed: 160, spread: Math.PI * 2, size: 3, g: 200 });
+        addRing(e.x, e.y, '#ff8a3a', 8, e.r, 0.45);
+        fx.ghosts.push({ type: 'burst', x: e.x, y: e.y, r: e.r, hit: e.hit, mx: e.mx, my: e.my, life: 1.2 });
+        addText(e.x, e.y - e.r - 6, 'パーン！', '#fff', 16, 0.7);
+        if (!e.hit && e.dist < e.r + 80) addText(e.mx, e.my - 34, 'とどかず あと' + Math.round(e.dist - e.r) + 'px', '#eee', 11, 1.1);
+        Snd.play('blast'); break;
+      case 'monkeyFlee':
+        fx.flee = { fx: e.fx, fy: e.fy, tx: e.tx, ty: e.ty, dir: e.dir, blastX: e.blastX, life: 1.8, max: 1.8 };
+        addText(e.fx, e.fy - 62, 'ひぃっ！', '#fff', 14, 0.8);
+        Snd.play('eek'); break;
+      case 'monkeyChased': addText(e.x, e.y - 62, 'うわっ蜂だ！', '#fff', 12, 0.8); Snd.play('eek'); break;
+      case 'monkeyNotice':
+        addText(e.x, e.y - 60, '!? 臼だ', '#fff', 13, 0.9);
+        fx.ghosts.push({ type: 'notice', x: e.usuX, life: 0.9, max: 0.9 });
+        Snd.play('notice'); break;
+      case 'monkeyHurt':
+        if (e.blocked && e.dealt === 0) { addText(e.x, e.y - 26, '効かない！臼で！', '#cfd8dc', 12, 0.9); Snd.play('guard'); flashGauge(); }
+        else if (e.kind === 'chestnut') { addText(e.x, e.y - 24, '-' + e.dealt, '#ffb347', 18, 0.9); fx.hitstop = Math.max(fx.hitstop, 0.06); shake(4); Snd.play('monkeyHurt'); }
+        else if (e.kind === 'bee') addText(e.x - 12, e.y - 20, '-' + e.dealt, '#ffe14a', 11, 0.5);
+        if (e.blocked && e.dealt > 0) flashGauge();
+        break;
+      case 'usuClimb': Snd.play('climb'); break;
+      case 'usuTop': Snd.play('climb'); break;
+      case 'usuArmed':
+        addText(e.x, CFG.RAIL.y - 34, 'スタンバイ！', '#ffe9b0', 12, 0.9);
+        addRing(e.x, CFG.RAIL.y - 14, '#ffe9b0', 10, 30, 0.4);
+        Snd.play('armed'); break;
+      case 'usuDrop': Snd.play('drop'); break;
+      case 'usuCross':
+        fx.ghosts.push({ type: 'cross', x: e.x, y: e.y, usuX: e.usuX, dx: e.dx, hit: e.hit, life: 1.6, max: 1.6 });
+        if (!e.hit) addText(e.x, e.y - 44, 'すり抜けた！ ずれ' + Math.round(Math.abs(e.dx)) + 'px', '#fff', 12, 1.3);
+        break;
+      case 'usuHit':
+        fx.hitstop = 0.18; shake(14); fx.flash = 0.6;
+        addPart(e.x, e.y, 26, { col: '#c48a52', speed: 260, size: 4, g: 600 });
+        addPart(e.x, e.y, 14, { col: '#ffe14a', speed: 200, size: 3, g: 100, shape: 's' });
+        addRing(e.x, e.y, '#fff', 10, 60, 0.45);
+        addText(e.x, e.y - 30, 'ドスン！ -' + e.dealt, '#ff5a3a', 24, 1.2);
+        Snd.play('usuHit'); break;
+      case 'usuMiss':
+        shake(4);
+        addPart(e.x, CFG.GROUND_Y - 4, 12, { col: '#a8713c', speed: 140, spread: Math.PI, size: 3 });
+        Snd.play('usuMiss'); break;
+      case 'usuLand': shake(3); Snd.play('usuMiss'); break;
+      case 'usuGone': addText(e.x, CFG.GROUND_Y - 40, '臼はひと休み…', '#eee', 11, 1); break;
+      case 'chestnutHit': addRing(e.x, e.y, '#ffb347', 6, 34, 0.3); break;
+      case 'poof': addPart(e.x, e.y, 6, { col: '#fff', speed: 60, size: 3, g: -30 }); break;
+      case 'hint': if (HINTS[e.id]) showHint(HINTS[e.id], 3.6); break;
+      case 'win':
+        fx.flash = 0.8; Snd.play('win'); fx.hitstop = Math.max(fx.hitstop, 0.12);
+        showBanner(e.kills + '匹目', e.name + 'をこらしめた！', '+' + e.bonus.toLocaleString() + '点' + (e.grew ? '　ハート最大 +1（' + e.maxHp + '個）' : e.healed ? '　体力 +1' : ''), 2.6);
+        if (e.grew) addText(world.crab.x, CFG.CRAB.y - 40, 'ハート +1', '#ff8a7a', 14, 1.4);
+        else if (e.healed) addText(world.crab.x, CFG.CRAB.y - 40, '+1 ♥', '#ff8a7a', 14, 1.2);
+        showHint('猿「まいりました…！柿はみんなで分けます」', 2.6); break;
+      case 'title':
+        later(1.5, function () { if (world && mode === 'play') { showBanner('称号ゲット！', '「' + e.name + '」', e.kills + '匹こらしめた', 2.2, 'title'); Snd.play('heal'); } });
+        break;
+      case 'nextMonkey': {
+        $('hint').classList.remove('show'); hintTimer = 0;
+        fx.leaver = { x: e.oldX, face: e.oldX < CFG.W / 2 ? -1 : 1, t: 0, level: e.wave - 1 };
+        const prev = L.waveStats(e.wave - 1);
+        const cur = L.waveStats(e.wave);
+        const faster = Math.round((1 - cur.intervalMul) * 100);
+        showBanner(e.wave + '匹目', e.name + 'があらわれた！', '体力 ' + Math.round(cur.maxHp / prev.maxHp * 100) + '%（' + cur.maxHp + '）・投げる速さ +' + faster + '%', 2.4);
+        Snd.play('windup');
+        $('wave').innerHTML = '<b>' + e.wave + '</b>匹目';
+        const wv = $('wave'); wv.classList.remove('pop'); void wv.offsetWidth; wv.classList.add('pop');
+        $('gaugeLabel').textContent = e.name;
+        break;
+      }
+      case 'monkeyEnter': shake(7); addRing(e.x, e.y, '#fff', 8, 40, 0.35); addPart(e.x, e.y, 10, { col: '#8a5a34', speed: 120, spread: Math.PI, size: 3 }); Snd.play('usuMiss'); break;
+      case 'lose': hideBanner(); Snd.stopBgm(); Snd.play('lose'); shake(10); showHint('カニ、ひっくり返った…', 2.6); break;
+      case 'done': showResult(e.result); break;
+    }
+  }
+  const NAMES = { bee: '蜂', chestnut: '栗', needle: '針', usu: '臼' };
+
+  let bannerTimer = null;
+  function showBanner(a, b, c, sec, cls) {
+    const el = $('banner');
+    el.querySelector('.bn1').textContent = a; el.querySelector('.bn2').textContent = b; el.querySelector('.bn3').textContent = c || '';
+    el.className = 'show' + (cls ? ' ' + cls : '');
+    cancelLater(bannerTimer);
+    bannerTimer = later(sec || 2, function () { el.className = cls || ''; });
+  }
+  function flashGauge() { const g = $('gauge'); g.classList.remove('flash'); void g.offsetWidth; g.classList.add('flash'); }
+
+  // ---------------- HUD ----------------
+  const heartSvg = '<svg viewBox="0 0 20 18"><path d="M10 17 C2 11 0 7 0 4.5 C0 1.8 2.2 0 4.8 0 C7 0 8.6 1.3 10 3.2 C11.4 1.3 13 0 15.2 0 C17.8 0 20 1.8 20 4.5 C20 7 18 11 10 17Z" fill="#ff4d3a" stroke="#fff7e6" stroke-width="1.6"/></svg>';
+  function updateHud(force) {
+    if (!world) return;
+    const c = world.crab, m = world.monkey;
+    if (force || c.hp !== lastHp || c.maxHp !== lastMaxHp) {
+      const el = $('hearts'); let html = '';
+      el.classList.toggle('many', c.maxHp > 5);
+      for (let i = 0; i < c.maxHp; i++) html += '<div class="heart' + (i < c.hp ? '' : ' off') + (lastHp >= 0 && i === c.hp - 1 && c.hp > lastHp ? ' pop' : '') + '">' + heartSvg + '</div>';
+      el.innerHTML = html; lastHp = c.hp; lastMaxHp = c.maxHp;
+    }
+    if (force || m.hp !== lastMonkeyHp) {
+      const pct = Math.max(0, m.hp) / m.maxHp * 100;
+      $('gaugeFill').style.width = pct + '%'; $('gaugeLag').style.width = pct + '%';
+      lastMonkeyHp = m.hp;
+    }
+    $('score').textContent = L.liveScore(world).toLocaleString();
+    if (force || c.held !== lastHeld) {
+      lastHeld = c.held;
+      const labels = { bee: '蜂を<br>放つ', chestnut: '栗を<br>置く', usu: '臼を<br>仕掛ける' };
+      $('actLabel').innerHTML = c.held ? labels[c.held] : 'なにも<br>持ってない';
+      actBtn.classList.toggle('empty', !c.held);
+      const ic = $('actIcon'), g = ic.getContext('2d');
+      g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, ic.width, ic.height);
+      if (c.held) { g.fillStyle = 'rgba(255,248,230,.9)'; circle(g, 34, 34, 31); g.fill(); drawItemIcon(g, c.held, 34, 36, 2, 0); }
+      else { g.strokeStyle = 'rgba(255,255,255,.6)'; g.lineWidth = 3; g.setLineDash([6, 5]); circle(g, 34, 34, 28); g.stroke(); g.setLineDash([]); }
+    }
+  }
+
+  function readBest() {
+    try { return { score: +localStorage.getItem('sarukani_best') || 0, kills: +localStorage.getItem('sarukani_bestKills') || 0 }; }
+    catch (e) { return { score: 0, kills: 0 }; }
+  }
+  function updateBestNote() {
+    const b = readBest();
+    $('bestNote').textContent = b.kills > 0 || b.score > 0 ? '最高 ' + b.kills + '匹「' + L.titleFor(b.kills).name + '」' : '';
+  }
+  function hideBanner() { clearTimeout(bannerTimer); $('banner').className = ''; }
+  function showResult() {
+    mode = 'result';
+    hideBanner();
+    const s = world.stats, m = world.monkey, k = s.kills;
+    const r = L.computeScore(s);
+    $('resTitle').textContent = k > 0 ? k + '匹こらしめた！' : 'カニ、やられた…';
+    $('resSub').innerHTML = world.wave + '匹目（' + world.ws.name + '）で力つきた／ゲージ残り ' + Math.ceil(m.hp / m.maxHp * 100) + '%<br>'
+      + '臼の命中 ' + s.usuHits + '回（外れ ' + s.usuMiss + '回）／プレイ ' + world.t.toFixed(0) + '秒';
+    $('resRank').textContent = r.title.name;
+    $('resRank').style.background = k >= 5 ? '#b8860b' : k >= 1 ? '#3d6b2a' : '#8a6a4a';
+    $('resNext').textContent = r.title.next ? 'あと ' + r.title.next.left + '匹で「' + r.title.next.name + '」' : '最高の称号です！';
+    const rows = [['与えたダメージ', r.damage], ['熟柿キャッチ ×' + s.ripe, r.ripe], ['臼の命中 ×' + s.usuHits, r.usu], ['猿をこらしめた ×' + k, r.kills]];
+    let html = '';
+    rows.forEach(function (row) { html += '<tr><td>' + row[0] + '</td><td>' + row[1].toLocaleString() + '</td></tr>'; });
+    html += '<tr class="total"><td>スコア</td><td>' + r.total.toLocaleString() + '</td></tr>';
+    $('resTable').innerHTML = html;
+    const best = readBest();
+    const notes = [];
+    try {
+      if (r.total > best.score) localStorage.setItem('sarukani_best', String(r.total));
+      if (k > best.kills) localStorage.setItem('sarukani_bestKills', String(k));
+    } catch (e) { /* storage 不可でも続行 */ }
+    notes.push(k > best.kills ? '最多こらしめ記録 更新！' : '最多 ' + best.kills + '匹');
+    notes.push(r.total > best.score ? 'ベストスコア更新！' : 'ベスト ' + best.score.toLocaleString());
+    $('resBest').textContent = notes.join('　');
+    updateBestNote();
+    $('resultScreen').classList.remove('hidden');
+    resultReady = false;
+    later(0.6, function () { resultReady = true; });
+  }
+
+  // ---------------- 描画 ----------------
+  function render(realT) {
+    const g = ctx;
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    if (bg) g.drawImage(bg, 0, 0); else { g.fillStyle = '#a9dcf2'; g.fillRect(0, 0, cv.width, cv.height); }
+    let sx = 0, sy = 0;
+    if (fx.shake > 0) { sx = (Math.random() - 0.5) * fx.shake; sy = (Math.random() - 0.5) * fx.shake; }
+    g.setTransform(scale, 0, 0, scale, sx * scale, sy * scale);
+    if (!world) { drawTitleScene(g, realT); return; }
+    // 臼の待機枝のしるし（タイトルでは出さない）
+    g.fillStyle = 'rgba(255,248,230,.7)'; g.font = 'bold 8px sans-serif'; g.textAlign = 'right';
+    g.fillText('↑臼の待機枝', CFG.RAIL.x1 + 14, CFG.RAIL.y + 16);
+    const w = world, t = realT, c = w.crab, m = w.monkey;
+
+    drawUsuGuide(g, w, t);
+    drawFleePreview(g, w, t);
+
+    // 地面のアイテム
+    for (const it of w.items) {
+      const blink = it.life < CFG.ITEM.blink && Math.floor(it.life * 8) % 2 === 0;
+      const y = CFG.GROUND_Y - 14 + Math.sin(t * 4 + it.x) * 1.5;
+      g.fillStyle = 'rgba(60,35,15,.25)'; ellipse(g, it.x, CFG.GROUND_Y + 1, 14, 4); g.fill();
+      if (!blink) {
+        g.fillStyle = 'rgba(255,248,225,.85)'; circle(g, it.x, y, 15); g.fill();
+        g.strokeStyle = it.kind === 'usu' ? '#d9722a' : '#c9a36a'; g.lineWidth = it.kind === 'usu' ? 2.5 : 1.5; circle(g, it.x, y, 15); g.stroke();
+        drawItemIcon(g, it.kind, it.x, y, it.kind === 'usu' ? 0.62 : 0.75, t);
+      }
+      // 残り時間のリング
+      g.strokeStyle = 'rgba(255,255,255,.9)'; g.lineWidth = 2.5;
+      g.beginPath(); g.arc(it.x, y, 18, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (it.life / CFG.ITEM.life)); g.stroke();
+      g.fillStyle = '#fff'; g.font = 'bold 10px sans-serif'; g.textAlign = 'center';
+      strokeText(g, NAMES[it.kind], it.x, y - 22, '#5a3a18');
+    }
+
+    // 地面に置いた栗
+    for (const k of w.chestnuts) {
+      if (k.state === 'fuse') {
+        const r = 1 - k.t / CFG.CHESTNUT.fuse;
+        drawChestnut(g, k.x, k.y, { shake: 1 + r * 2.5, t: t, glow: r });
+        g.font = 'bold 14px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#fff';
+        strokeText(g, String(Math.ceil(k.t)), k.x, k.y - 20, '#a33');
+        // 飛ぶ先（いまの猿の位置へ。横は aimMax まで）と破裂の範囲
+        drawChestnutReach(g, k.x, k.y, w.monkey, 0.2 + r * 0.45, t);
+      }
+    }
+
+    // 熟柿の影とキャッチ範囲
+    let nearRipe = false;
+    for (const p of w.persimmons) {
+      if (p.kind !== 'ripe') continue;
+      const k = L.clamp((p.y - 100) / (CFG.GROUND_Y - 100), 0, 1);
+      g.fillStyle = 'rgba(200,90,20,' + (0.15 + k * 0.3) + ')'; ellipse(g, p.x, CFG.GROUND_Y + 1, 6 + k * 6, 2 + k * 2); g.fill();
+      if (Math.abs(p.x - c.x) < 70 && p.y > 300) nearRipe = true;
+    }
+    // 青柿の着弾予告
+    for (const p of w.persimmons) {
+      if (p.kind !== 'green') continue;
+      const ttl = L.clamp((CFG.GROUND_Y - p.y) / 500, 0, 1);
+      g.strokeStyle = 'rgba(220,40,20,' + (0.85 - ttl * 0.5) + ')'; g.lineWidth = 2.5;
+      const r = 5 + ttl * 6, lx = p.landX;
+      g.beginPath(); g.moveTo(lx - r, CFG.GROUND_Y - r * 0.4); g.lineTo(lx + r, CFG.GROUND_Y + r * 0.4); g.moveTo(lx + r, CFG.GROUND_Y - r * 0.4); g.lineTo(lx - r, CFG.GROUND_Y + r * 0.4); g.stroke();
+    }
+    if (m.state === 'windup' && m.aim && w.phase === 'play') {
+      g.strokeStyle = 'rgba(220,40,20,.35)'; g.lineWidth = 2; g.setLineDash([3, 4]);
+      ellipse(g, m.aim.landX, CFG.GROUND_Y, 12, 4); g.stroke(); g.setLineDash([]);
+    }
+
+    // 倒された猿は、とぼとぼ退場
+    if (fx.leaver) {
+      const L2 = fx.leaver;
+      drawMonkey(g, { x: L2.x, y: CFG.GROUND_Y, state: 'defeated', landed: true, face: L2.face, hp: 1, maxHp: 1, hurtT: 0, level: L2.level }, t);
+      g.font = 'bold 10px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#fff'; strokeText(g, 'とぼとぼ…', L2.x, CFG.GROUND_Y - 58, '#5a3a1a');
+    }
+    // 猿
+    m.level = w.wave;
+    drawMonkey(g, m, t);
+    if (m.state === 'windup' && m.count > 1) { g.font = 'bold 11px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#ffe14a'; strokeText(g, m.count + '連投!', m.x, m.y - 56, '#7a1f10'); }
+
+    // 臼
+    if (w.usu) {
+      const u = w.usu;
+      const look = L.clamp((m.x - u.x) / 30, -2, 2);
+      if (u.state === 'fall') {
+        g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(u.x - 12, u.y - 60, 24, 46);
+      }
+      const bobY = u.state === 'armed' ? Math.sin(t * 3) * 1.2 : 0;
+      drawUsu(g, u.x, u.y + bobY, {
+        rot: u.state === 'toTrunk' || u.state === 'leave' ? u.rot : 0,
+        look: u.state === 'armed' ? look : 0, down: u.state === 'armed' || u.state === 'fall',
+        arms: u.state === 'climb' || u.state === 'rail', t: t, tired: u.state === 'grounded',
+      });
+      if (u.state === 'grounded') {
+        const blink = u.life < 3 && Math.floor(u.life * 8) % 2 === 0;
+        if (!blink) { g.font = 'bold 10px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#fff'; strokeText(g, '拾って再設置', u.x, u.y - 22, '#5a3a18'); }
+      }
+    }
+
+    // 蜂・針・栗（飛翔）
+    for (const b of w.bees) {
+      g.strokeStyle = 'rgba(255,220,60,.35)'; g.lineWidth = 1.5; g.setLineDash([2, 4]);
+      g.beginPath(); g.moveTo(b.x, b.y); g.lineTo(b.x - b.vx * 0.12, b.y - b.vy * 0.12); g.stroke(); g.setLineDash([]);
+      drawBee(g, b.x, b.y, t, b.vx < 0);
+    }
+    for (const s of w.shots) drawNeedle(g, s.x, s.y, 0, 16);
+    for (const k of w.chestnuts) if (k.state === 'fly') {
+      const sp = Math.hypot(k.vx || 0, k.vy) || 1, ux = (k.vx || 0) / sp, uy = k.vy / sp;
+      g.strokeStyle = 'rgba(255,180,80,.45)'; g.lineWidth = 8; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(k.x - ux * 10, k.y - uy * 10); g.lineTo(k.x - ux * 40, k.y - uy * 40); g.stroke();
+      drawChestnut(g, k.x, k.y, { rot: t * 12 });
+      // 破裂する点と範囲
+      g.strokeStyle = 'rgba(255,140,60,.7)'; g.lineWidth = 1.5; g.setLineDash([4, 4]);
+      circle(g, k.tx, k.ty, CFG.CHESTNUT.burstR); g.stroke(); g.setLineDash([]);
+    }
+
+    // 柿
+    for (const p of w.persimmons) drawPersimmonShape(g, p.x, p.y, p.r, p.kind, p.kind === 'green' ? p.rot : Math.sin(p.t * 3 + p.ph) * 0.2);
+
+    // キャッチ範囲（熟柿が近いときだけ）
+    if (nearRipe && w.phase !== 'lose') {
+      const C = CFG.CRAB;
+      g.strokeStyle = 'rgba(255,211,77,' + (0.55 + Math.sin(t * 10) * 0.25) + ')'; g.lineWidth = 2; g.setLineDash([4, 3]);
+      g.strokeRect(c.x - C.halfW - 3, C.y - 4 - C.halfH - 8, (C.halfW + 3) * 2, (C.halfH + 8) * 2);
+      g.setLineDash([]);
+    }
+
+    // カニ
+    const blink = c.invuln > 0 && Math.floor(c.invuln * 12) % 2 === 0;
+    if (!blink) {
+      drawCrab(g, c.x, CFG.CRAB.y, {
+        walk: c.walk, t: t, heavy: c.held === 'usu', hurt: c.invuln > CFG.CRAB.invuln - 0.4,
+        raise: c.held ? 6 : 0, lookX: L.clamp((m.x - c.x) / 80, -1.5, 1.5), flip: w.phase === 'lose',
+      });
+      if (c.held && w.phase === 'play') drawItemIcon(g, c.held, c.x, CFG.CRAB.y - 40, c.held === 'usu' ? 0.85 : 0.9, t);
+    }
+    if (c.needleT > 0) { g.font = 'bold 10px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#e8f0ff'; strokeText(g, '針 連射中', c.x, CFG.CRAB.y + 28, '#334'); }
+
+    drawGhosts(g, w, t);
+    drawFxLayer(g);
+
+    if (fx.flash > 0) { g.fillStyle = 'rgba(255,255,255,' + fx.flash * 0.35 + ')'; g.fillRect(0, 0, W, H); }
+    if (w.phase === 'win' && m.landed) {
+      drawBubble(g, m.x, m.y - 60, 'ごめんなさい！', t);
+      // 仲間たちが集まって喜ぶ
+      const p = w.phaseT;
+      drawBee(g, c.x - 40 + Math.sin(p * 4) * 10, CFG.CRAB.y - 60 + Math.cos(p * 5) * 6, t, false);
+      drawChestnut(g, c.x + 36, CFG.GROUND_Y - 10 - Math.abs(Math.sin(p * 6)) * 12, {});
+      drawNeedle(g, c.x - 30, CFG.GROUND_Y - 14 - Math.abs(Math.sin(p * 6 + 1)) * 10, 0.3, 18);
+      drawUsu(g, c.x + 70, CFG.GROUND_Y - 14 - Math.abs(Math.sin(p * 5 + 2)) * 8, { size: 0.9 });
+    }
+  }
+
+  // 臼の「落下ライン」：命中幅を帯で表示。猿が帯に入ると明るくなる
+  function drawUsuGuide(g, w, t) {
+    const U = CFG.USU, m = w.monkey, c = w.crab;
+    const bottom = CFG.TIERS[2].y + 8, top = CFG.RAIL.y;
+    // 臼を持っているとき：仕掛け先の予告
+    if (c.held === 'usu' && w.phase === 'play') {
+      const tx = L.clamp(c.x, CFG.RAIL.x0, CFG.RAIL.x1);
+      g.strokeStyle = 'rgba(255,248,230,.6)'; g.setLineDash([5, 5]); g.lineWidth = 1.5;
+      g.strokeRect(tx - U.hitHalfW, top, U.hitHalfW * 2, bottom - top);
+      g.setLineDash([]);
+      g.globalAlpha = 0.45; drawUsu(g, tx, CFG.RAIL.y - U.half, { size: 0.9 }); g.globalAlpha = 1;
+      g.fillStyle = '#fff'; g.font = 'bold 10px sans-serif'; g.textAlign = 'center';
+      strokeText(g, 'ここに仕掛ける', tx, top - 30, '#5a3a18');
+      g.strokeStyle = 'rgba(255,248,230,.35)'; g.beginPath(); g.moveTo(tx, bottom); g.lineTo(c.x, CFG.CRAB.y - 50); g.stroke();
+      return;
+    }
+    const u = w.usu;
+    if (!u || (u.state !== 'armed' && u.state !== 'rail' && u.state !== 'climb' && u.state !== 'toTrunk' && u.state !== 'fall')) return;
+    const x = u.tx;
+    const inside = Math.abs(m.x - x) <= U.hitHalfW;
+    if (u.state === 'armed' || u.state === 'fall') {
+      g.fillStyle = inside ? 'rgba(255,90,40,.28)' : 'rgba(255,200,120,.16)';
+      g.fillRect(x - U.hitHalfW, top, U.hitHalfW * 2, bottom - top);
+      g.strokeStyle = inside ? 'rgba(255,80,40,.9)' : 'rgba(255,230,180,.75)';
+      g.lineWidth = inside ? 2 : 1.4; g.setLineDash([6, 5]); g.lineDashOffset = -t * 20;
+      g.beginPath(); g.moveTo(x - U.hitHalfW, top); g.lineTo(x - U.hitHalfW, bottom); g.moveTo(x + U.hitHalfW, top); g.lineTo(x + U.hitHalfW, bottom); g.stroke();
+      g.setLineDash([]); g.lineDashOffset = 0;
+      g.strokeStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.moveTo(x, top); g.lineTo(x, bottom); g.stroke();
+      // 落ち着いた猿が近寄らない幅（薄い）
+      if (u.state === 'armed' && m.state === 'calm') {
+        g.fillStyle = 'rgba(255,255,255,.06)';
+        g.fillRect(x - CFG.MONKEY.avoidHalf, top, CFG.MONKEY.avoidHalf * 2, bottom - top);
+      }
+    } else {
+      // 登っている途中：行き先の予告
+      g.strokeStyle = 'rgba(255,248,230,.5)'; g.setLineDash([5, 5]); g.lineWidth = 1.5;
+      g.strokeRect(x - U.hitHalfW, top, U.hitHalfW * 2, bottom - top);
+      g.setLineDash([]);
+      g.globalAlpha = 0.35; drawUsu(g, x, CFG.RAIL.y - U.half, { size: 0.9 }); g.globalAlpha = 1;
+    }
+  }
+
+  // 栗の届く先：線と破裂の円。猿が円に入っていれば明るく、入っていなければ「とどかない」
+  function drawChestnutReach(g, x, y, m, a, t) {
+    const my = m.y - CFG.MONKEY.bodyOff;
+    const aim = L.chestnutAim(x, y, m.x, my);
+    const inside = Math.hypot(m.x - aim.tx, my - aim.ty) <= CFG.CHESTNUT.burstR;
+    const col = inside ? '255,140,60' : '255,255,255';
+    g.strokeStyle = 'rgba(' + col + ',' + a + ')'; g.setLineDash([4, 6]); g.lineWidth = 2;
+    g.beginPath(); g.moveTo(x, y - 14); g.lineTo(aim.tx, aim.ty); g.stroke();
+    g.fillStyle = 'rgba(' + col + ',' + a * 0.25 + ')';
+    circle(g, aim.tx, aim.ty, CFG.CHESTNUT.burstR); g.fill(); g.stroke(); g.setLineDash([]);
+    if (!inside) { g.font = 'bold 9px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#fff'; strokeText(g, 'とどかない', aim.tx, aim.ty + CFG.CHESTNUT.burstR + 10, '#5a3a18'); }
+  }
+
+  // 栗で逃げる方向の矢印。持っている間は「いま置いたら」の向きを猿の横に出す
+  function drawFleePreview(g, w, t) {
+    const m = w.monkey, c = w.crab;
+    if (w.phase !== 'play') return;
+    if (c.held === 'chestnut') drawChestnutReach(g, c.x, CFG.GROUND_Y - 9, m, 0.35 + Math.sin(t * 6) * 0.1, t);
+    if ((c.held === 'chestnut' || c.held === 'bee') && m.state !== 'stunned') {
+      let dir = Math.sign(m.x - c.x); if (Math.abs(m.x - c.x) < 4) dir = m.x < CFG.TRUNK_X ? 1 : -1;
+      const ax = m.x + dir * 22, ay = m.y - 30, a = 0.55 + Math.sin(t * 6) * 0.25;
+      g.fillStyle = 'rgba(255,255,255,' + a + ')'; g.strokeStyle = 'rgba(90,50,20,' + a + ')'; g.lineWidth = 1.5;
+      g.beginPath(); g.moveTo(ax, ay - 6); g.lineTo(ax + dir * 14, ay); g.lineTo(ax, ay + 6); g.closePath(); g.fill(); g.stroke();
+      g.font = 'bold 9px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#fff';
+      strokeText(g, '逃げる向き', m.x + dir * 30, m.y - 42, '#5a3a18');
+    }
+    if (fx.flee) {
+      const f = fx.flee, a = Math.min(1, f.life / 0.5);
+      g.strokeStyle = 'rgba(255,255,255,' + 0.8 * a + ')'; g.lineWidth = 2.5; g.setLineDash([6, 6]); g.lineDashOffset = -t * 40;
+      const midX = (f.fx + f.tx) / 2, midY = Math.min(f.fy, f.ty) - 50;
+      g.beginPath(); g.moveTo(f.fx, f.fy - 20); g.quadraticCurveTo(midX, midY, f.tx, f.ty - 20); g.stroke();
+      g.setLineDash([]); g.lineDashOffset = 0;
+      g.fillStyle = 'rgba(255,255,255,' + 0.9 * a + ')';
+      g.beginPath(); g.moveTo(f.tx + f.dir * 10, f.ty - 20); g.lineTo(f.tx - f.dir * 4, f.ty - 28); g.lineTo(f.tx - f.dir * 4, f.ty - 12); g.closePath(); g.fill();
+    }
+  }
+
+  function drawGhosts(g, w, t) {
+    for (const gh of fx.ghosts) {
+      const a = Math.min(1, gh.life / 0.4);
+      if (gh.type === 'cross') {
+        // 臼が猿の高さを通った瞬間の位置関係を残す
+        const U = CFG.USU;
+        g.globalAlpha = a;
+        g.strokeStyle = gh.hit ? '#ff5a3a' : '#ffffff'; g.lineWidth = 2; g.setLineDash([3, 3]);
+        g.strokeRect(gh.usuX - U.hitHalfW, gh.y - U.hitHalfH, U.hitHalfW * 2, U.hitHalfH * 2);
+        g.setLineDash([]);
+        g.fillStyle = gh.hit ? '#ff5a3a' : '#fff';
+        circle(g, gh.x, gh.y, 3.5); g.fill();
+        g.beginPath(); g.moveTo(gh.usuX, gh.y); g.lineTo(gh.x, gh.y); g.stroke();
+        g.font = 'bold 11px sans-serif'; g.textAlign = 'center';
+        strokeText(g, gh.hit ? '命中！' : '判定の外', gh.usuX, gh.y + U.hitHalfH + 13, gh.hit ? '#7a1f10' : '#333');
+        g.globalAlpha = 1;
+      } else if (gh.type === 'ripeMiss') {
+        g.globalAlpha = a;
+        g.strokeStyle = '#ffd34d'; g.lineWidth = 2; g.setLineDash([2, 3]);
+        const edge = gh.cx + Math.sign(gh.x - gh.cx) * (CFG.CRAB.halfW + 3);
+        g.beginPath(); g.moveTo(edge, CFG.GROUND_Y - 12); g.lineTo(gh.x - Math.sign(gh.x - gh.cx) * CFG.RIPE_R, CFG.GROUND_Y - 12); g.stroke();
+        g.setLineDash([]);
+        g.globalAlpha = 1;
+      } else if (gh.type === 'notice') {
+        g.globalAlpha = a * 0.8;
+        g.strokeStyle = '#fff'; g.lineWidth = 2; g.setLineDash([2, 4]);
+        g.strokeRect(gh.x - CFG.MONKEY.avoidHalf, CFG.RAIL.y, CFG.MONKEY.avoidHalf * 2, CFG.TIERS[2].y + 8 - CFG.RAIL.y);
+        g.setLineDash([]); g.globalAlpha = 1;      } else if (gh.type === 'burst') {
+        // 栗の破裂範囲と猿の中心：入っていれば赤、外なら白い線で距離
+        g.globalAlpha = a;
+        g.strokeStyle = gh.hit ? '#ff5a3a' : '#ffffff'; g.lineWidth = 2; g.setLineDash([3, 3]);
+        circle(g, gh.x, gh.y, gh.r); g.stroke(); g.setLineDash([]);
+        g.fillStyle = gh.hit ? '#ff5a3a' : '#fff';
+        circle(g, gh.mx, gh.my, 3.5); g.fill();
+        if (!gh.hit) { g.beginPath(); g.moveTo(gh.x, gh.y); g.lineTo(gh.mx, gh.my); g.stroke(); }
+        g.globalAlpha = 1;
+      }
+    }
+  }
+
+  function drawFxLayer(g) {
+    for (const r of fx.rings) {
+      const k = 1 - r.life / r.max;
+      g.strokeStyle = r.col; g.globalAlpha = 1 - k; g.lineWidth = 3 * (1 - k) + 1;
+      circle(g, r.x, r.y, L.lerp(r.r0, r.r1, k)); g.stroke();
+    }
+    g.globalAlpha = 1;
+    for (const p of fx.parts) {
+      g.globalAlpha = Math.min(1, p.life / p.max * 1.5);
+      g.fillStyle = p.col;
+      if (p.shape === 's') star(g, p.x, p.y, p.size * 1.4);
+      else g.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+    }
+    g.globalAlpha = 1;
+    g.textAlign = 'center';
+    for (const s of fx.texts) {
+      const k = s.life / s.max;
+      g.globalAlpha = Math.min(1, k * 2.5);
+      const pop = k > 0.85 ? 1 + (k - 0.85) * 3 : 1;
+      g.font = '900 ' + Math.round(s.size * pop) + 'px "Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif';
+      g.fillStyle = s.col;
+      const hw = g.measureText(s.text).width / 2 + 4;
+      strokeText(g, s.text, L.clamp(s.x, hw, W - hw), s.y, 'rgba(60,30,10,.9)');
+    }
+    g.globalAlpha = 1;
+  }
+
+  function strokeText(g, text, x, y, col) {
+    g.lineWidth = 3; g.strokeStyle = col || '#000'; g.lineJoin = 'round';
+    g.strokeText(text, x, y); g.fillText(text, x, y);
+  }
+
+  function drawBubble(g, x, y, text, t) {
+    g.font = 'bold 12px sans-serif'; g.textAlign = 'center';
+    const wdt = g.measureText(text).width + 16;
+    const bx = L.clamp(x, wdt / 2 + 4, W - wdt / 2 - 4);
+    g.fillStyle = '#fff'; g.strokeStyle = '#5a3a18'; g.lineWidth = 2;
+    g.beginPath(); g.roundRect ? g.roundRect(bx - wdt / 2, y - 14, wdt, 22, 8) : g.rect(bx - wdt / 2, y - 14, wdt, 22); g.fill(); g.stroke();
+    g.beginPath(); g.moveTo(x - 4, y + 8); g.lineTo(x, y + 15); g.lineTo(x + 4, y + 8); g.fill();
+    g.fillStyle = '#5a3a18'; g.fillText(text, bx, y + 2);
+  }
+
+  function drawTitleScene(g, t) {
+    // 猿は枝の上で逃げ回り、蜂が追いかける。カニは地面で左右に歩く
+    const mx = 180 + Math.sin(t * 0.9) * 120;
+    const mface = Math.cos(t * 0.9) >= 0 ? 1 : -1;
+    drawMonkey(g, { x: mx, y: CFG.TIERS[2].y, state: 'chased', face: mface, hp: 100, maxHp: 100, hurtT: 0, target: null, level: 1 + (Math.floor(t / 4) % 6) }, t);
+    drawBee(g, mx - mface * 34 + Math.sin(t * 7) * 6, CFG.TIERS[2].y - 44 + Math.cos(t * 9) * 5, t, mface < 0);
+    const cx = 180 + Math.sin(t * 0.7 + 1) * 110;
+    drawCrab(g, cx, CFG.CRAB.y, { t: t, walk: t * 60, lookX: L.clamp((mx - cx) / 80, -1.5, 1.5) });
+    drawChestnut(g, cx + 34, CFG.GROUND_Y - 10 - Math.abs(Math.sin(t * 5)) * 14, {});
+    drawNeedle(g, cx - 32, CFG.GROUND_Y - 14 - Math.abs(Math.sin(t * 5 + 1)) * 10, 0.3, 18);
+  }
+
+  // ---------------- メインループ ----------------
+  let realT = 0, hudT = 0, beeBuzzT = 0;
+  function frame(now) {
+    const rawDt = Math.min(0.1, (now - lastNow) / 1000);
+    lastNow = now;
+    realT += rawDt;
+    const dt = rawDt * timeScale;
+    if (world && mode === 'play' || (world && mode === 'result')) {
+      if (!paused && !manual && world.phase !== 'done') {
+        if (fx.hitstop > 0) fx.hitstop -= dt;
+        else {
+          acc += dt;
+          let n = 0;
+          while (acc >= STEP && n < 8) { stepOnce(); acc -= STEP; n++; }
+          if (n >= 8) acc = 0;
+        }
+      }
+      if (!manual) { if (!paused) updateFx(dt); ambient(dt); }
+    }
+    if (!manual) { tickLaters(rawDt); tickHint(rawDt); }
+    // 臼が幹を登っている間はヒントを薄くして、臼を隠さない
+    $('hint').classList.toggle('dim', !!(world && world.usu && world.usu.state === 'climb'));
+    hudT -= rawDt;
+    if (hudT <= 0 && world) { updateHud(false); hudT = 0.05; }
+    if (!manual) render(realT);
+    requestAnimationFrame(frame);
+  }
+  function tickHint(dt) { if (hintTimer > 0) { hintTimer -= dt; if (hintTimer <= 0) $('hint').classList.remove('show'); } }
+  function ambient(dt) {
+    if (!world || paused) return;
+    fuseTickT -= dt;
+    if (fuseTickT <= 0 && world.chestnuts.some(function (k) { return k.state === 'fuse'; })) {
+      const k = world.chestnuts.find(function (k) { return k.state === 'fuse'; });
+      fuseTickT = Math.max(0.12, k.t / CFG.CHESTNUT.fuse * 0.45);
+      Snd.play('tick');
+    }
+    beeBuzzT -= dt;
+    if (beeBuzzT <= 0 && world.bees.some(function (b) { return b.life > 0; })) { beeBuzzT = 0.55; Snd.play('bee'); }
+    const angry = world.monkey.hp <= world.monkey.maxHp * 0.5;
+    Snd.tempo = Math.min(150, (angry ? 128 : 112) + (world.wave - 1) * 3);
+  }
+
+  // ---------------- 起動 ----------------
+  function drawIcons() {
+    document.querySelectorAll('canvas[data-icon]').forEach(function (c) {
+      const g = c.getContext('2d'); g.clearRect(0, 0, c.width, c.height);
+      drawItemIcon(g, c.dataset.icon, c.width / 2, c.height / 2 + 1, c.dataset.icon === 'usu' ? 1.5 : 1.8, 0.3);
+    });
+  }
+  window.addEventListener('resize', resize);
+  resize(); drawIcons(); updateBestNote(); setMenu(true);
+  requestAnimationFrame(frame);
+
+  // ---------------- 確認用の入口（自動テスト・撮影用） ----------------
+  let promoIn = { targetX: null, moveX: 0 }, promoAcc = 0;
+  function promoStep(dt) {
+    realT += dt;
+    if (world && (mode === 'play' || mode === 'result') && world.phase !== 'done') {
+      if (fx.hitstop > 0) fx.hitstop -= dt;
+      else {
+        promoAcc += dt;
+        while (promoAcc >= STEP - 1e-9) {
+          // 撮影の台本が window.__promoBot(world) を置いたら、その操作で動かす
+          const bot = typeof window.__promoBot === 'function' ? window.__promoBot(world) : null;
+          stepOnce(Object.assign({ moveX: 0, targetX: null, action: false }, bot || promoIn));
+          promoIn = Object.assign({}, promoIn, { action: false });
+          promoAcc -= STEP;
+        }
+      }
+    }
+    if (world) { updateFx(dt); ambient(dt); }
+    tickLaters(dt); tickHint(dt);
+    if (world) updateHud(false);
+    render(realT);
+  }
+  window.__game = {
+    get world() { return world; },
+    get mode() { return mode; },
+    start: function (seed) { startGame(seed == null ? 1 : seed); },
+    setSpeed: function (s) { timeScale = s; },
+    manual: function (on) { manual = !!on; },
+    // step(n, input)：1/60 秒を n 回（e2e 用）。step(dt)（dt < 1 秒）：撮影用に dt 秒進めて描画まで行う
+    step: function (n, inp) {
+      if (typeof n === 'number' && n > 0 && n < 1) { promoStep(n); return; }
+      n = n || 1;
+      for (let i = 0; i < n; i++) {
+        if (!world || world.phase === 'done') break;
+        if (fx.hitstop > 0) { fx.hitstop -= STEP; updateFx(STEP); continue; }
+        stepOnce(Object.assign({ moveX: 0, targetX: null, action: false }, inp || {}));
+        if (inp && inp.action) inp = Object.assign({}, inp, { action: false });
+        updateFx(STEP); tickLaters(STEP); tickHint(STEP);
+      }
+      updateHud(false);
+    },
+    // 撮影用：以後の step(dt) で使う操作（targetX: カニの行き先、action: 1回だけアクション）
+    input: function (o) { promoIn = Object.assign({ targetX: null, moveX: 0 }, o || {}); if (promoIn.action) pressBtn(); },
+    state: function () {
+      if (!world) return { mode: mode };
+      const m = world.monkey, c = world.crab, u = world.usu;
+      return { mode: mode, phase: world.phase, t: world.t, wave: world.wave, kills: world.stats.kills,
+        monkey: { x: m.x, y: m.y, hp: m.hp, maxHp: m.maxHp, state: m.state },
+        crab: { x: c.x, hp: c.hp, maxHp: c.maxHp, held: c.held },
+        usu: u ? { x: u.x, state: u.state } : null,
+        items: world.items.map(function (it) { return { kind: it.kind, x: it.x }; }) };
+    },
+    render: function () { render(realT); },
+    give: function (kind) { if (world) world.crab.held = kind; updateHud(true); },
+    spawnItem: function (kind, x) { if (world) world.items.push({ kind: kind, x: x, life: CFG.ITEM.life, t: 0 }); },
+    drainEvents: function () { return eventLog.splice(0); },
+    showHint: showHint,
+    audio: Snd,
+  };
+})();
+</script>
+</body>
+</html>

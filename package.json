@@ -1,0 +1,22 @@
+{
+  "name": "sarukani-gassen",
+  "version": "1.0.0",
+  "private": true,
+  "license": "MIT",
+  "description": "サルカニ合戦 やられる前にヤレ：柿をかわして、蜂と栗で猿を追い込み、臼で仕留めるミニWebゲーム",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/logic.test.mjs tests/balance.test.mjs",
+    "e2e": "node tools/e2e.mjs",
+    "shots": "node tools/e2e.mjs --shots",
+    "ogp": "node tools/ogp/make-ogp.mjs",
+    "build": "node tools/build-dist.mjs",
+    "deploy": "npm run build && wrangler deploy",
+    "promo": "npm run build && node tools/promo/make-bgm.mjs && node tools/promo/record.mjs"
+  },
+  "devDependencies": {
+    "ffmpeg-static": "^5.3.0",
+    "playwright-core": "^1.48.0",
+    "wrangler": "^4.162.0"
+  }
+}
