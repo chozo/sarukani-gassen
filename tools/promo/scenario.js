@@ -1,4 +1,4 @@
-// 告知動画の台本（サルカニ合戦 やられる前にヤレ）。
+// 告知動画の台本（さるかに合戦 やられる前にヤレ）。
 // カニの操作は、ゲームの window に置いたボット（window.__promoBot）が毎ステップ決める。
 // ボットは tests/balance.test.mjs の「臼を仕掛けて蜂・栗で追い込む」戦略と同じ。
 // 称号は動画に出さない（「称号ゲット！」の帯は隠す。結果画面は映さない）。
@@ -12,7 +12,7 @@ export const config = {
   game: { width: 405, height: 720 },
   serveDir: 'dist',
   gamePath: '/sarukani-gassen/',
-  music: { file: 'tools/promo/bgm.wav', volume: 0.04 }, // 効果音（約 -31 LUFS）より 12 dB ほど小さく
+  music: { file: 'tools/promo/bgm.wav', volume: 0.038 }, // 効果音（約 -31 LUFS）より 12〜13 dB 小さく（真のピークが -1〜-2 dBTP に収まる値）
 };
 
 // ゲームの window で実行する準備：ボットを置き、称号の帯を隠す
@@ -69,7 +69,7 @@ export default async function scenario(p) {
   p.off('usuHit');
 
   // ---- タイトル ----
-  p.title({ title: 'サルカニ合戦', sub: 'やられる前にヤレ', logo: '/sarukani-gassen/favicon.svg', dur: 2.6 });
+  p.title({ title: 'さるかに合戦', sub: 'やられる前にヤレ', logo: '/sarukani-gassen/favicon.svg', dur: 2.6 });
   await p.wait(3.1);
 
   // ---- 本編：最初から ----
@@ -104,6 +104,6 @@ export default async function scenario(p) {
 
   // ---- エンドカード ----
   for (const ev of ['usuMiss', 'usuHit']) p.off(ev);
-  p.endCard({ title: 'サルカニ合戦', sub: 'やられる前にヤレ', logo: '/sarukani-gassen/favicon.svg', cta: '今すぐ遊べる！', dur: 3.5 });
+  p.endCard({ title: 'さるかに合戦', sub: 'やられる前にヤレ', logo: '/sarukani-gassen/favicon.svg', cta: '今すぐ遊べる！', dur: 3.5 });
   await p.wait(3.5);
 }

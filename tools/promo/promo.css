@@ -9,7 +9,7 @@ body {
 }
 
 /* 背景。ゲームの世界観に合わせて変える（scenario.js の config.background でも上書きできる） */
-/* サルカニ合戦：OGP 画像と同じ、黄色〜オレンジの放射線と水玉 */
+/* さるかに合戦：OGP 画像と同じ、黄色〜オレンジの放射線と水玉 */
 #bg {
   position: absolute; inset: 0; overflow: hidden;
   background:

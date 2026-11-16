@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- サルカニ合戦のカニ（ゲーム内の drawCrab を太く単純にしたもの） -->
+  <!-- さるかに合戦のカニ（ゲーム内の drawCrab を太く単純にしたもの） -->
   <g stroke="#9e2a18" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none">
     <path d="M18 42 L9 47 L6 55"/><path d="M22 45 L16 52 L15 59"/>
     <path d="M46 42 L55 47 L58 55"/><path d="M42 45 L48 52 L49 59"/>

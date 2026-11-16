@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "license": "MIT",
-  "description": "サルカニ合戦 やられる前にヤレ：柿をかわして、蜂と栗で猿を追い込み、臼で仕留めるミニWebゲーム",
+  "description": "さるかに合戦 やられる前にヤレ：柿をかわして、蜂と栗で猿を追い込み、臼で仕留めるミニWebゲーム",
   "type": "module",
   "scripts": {
     "test": "node --test tests/logic.test.mjs tests/balance.test.mjs",

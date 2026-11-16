@@ -91,7 +91,7 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><style>
   <div class="phone"><img src="${toData(gameShot, 'image/png')}"></div>
   <div class="left">
     <div class="ribbon">昔話アクション</div>
-    <h1 class="logo" style="margin:0"><span class="l1">サルカニ合戦</span><span class="l2">やられる前にヤレ</span></h1>
+    <h1 class="logo" style="margin:0"><span class="l1">さるかに合戦</span><span class="l2">やられる前にヤレ</span></h1>
     <div class="bubble">強くなる猿を <b>何匹こらしめられる？</b></div>
   </div>
   <div class="crab">${crabSvg}</div>
